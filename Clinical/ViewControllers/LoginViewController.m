@@ -41,8 +41,6 @@
 {
     [super viewDidLoad];
     
-    [self.username becomeFirstResponder];
-    
     self.messageLabel.text = @"";
     
     [self.activityIndicator setHidesWhenStopped:YES];
@@ -125,7 +123,6 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"clinicalSegue"]) {
         ClinicalViewController *clinicalViewController = [segue destinationViewController];
-        //clinicalViewController.loginData = [[LoginData alloc] initWithData:self.loginData];
         clinicalViewController.authresponse = self.authResponse;
     }
 }
@@ -139,53 +136,15 @@
 }
 
 - (IBAction)login:(id)sender {
-    /*
-    NSString *username;
-    if (![self.username.text isEqualToString:@""]) {
-        username = self.username.text;
-    }
-    else {
-        username = kTestLogin;
-    }
-    
-    NSString *password;
-    if (![self.password.text isEqualToString:@""]) {
-        password = self.password.text;
-    }
-    else if (![kTestPassword isEqualToString:@""]) {
-        password = kTestPassword;
-    }
-    else {
-        password = @"xxx";
-    }
-    */
 
     if (self.activityIndicator.hidden)
     {
         [self.activityIndicator startAnimating];
-        /*[self.loginDataController checkLogin:username withPassword:password at:self.strUrl];*/
         [self doLogin];
     }
 }
 
 #pragma mark - Login Data delegate
-
-
-
--(void) didFailLogin:(LoginDataController *)controller withLogin:(LoginData *)loginData
-{
-    [self.activityIndicator stopAnimating];
-
-    self.messageLabel.text = loginData.error;
-}
-
-- (void) loginWasSuccessful:(AuthResponse *) authResponse
-{
-  
-    [self.activityIndicator stopAnimating];
-    
-    [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
-}
 
 - (void) authenticationResult:(NSString *) jsonData
 {
@@ -195,7 +154,8 @@
     if(authResponse.Success)
     {
         self.authResponse = authResponse;
-        [self loginWasSuccessful:authResponse];
+        [self.activityIndicator stopAnimating];
+        [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
         
     }
     else
@@ -203,8 +163,13 @@
         UIAlertView *a = [[UIAlertView alloc] initWithTitle:@"Fail" message:@"Invalid credentials" delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"OK", nil];
         [a show];
         
+        
+        self.messageLabel.text = @"Login failed";
+        
         [self.username setEnabled:true ];
         [self.password setEnabled:true ];
+        
+        [self.activityIndicator stopAnimating];
     }
     
 }
@@ -225,24 +190,5 @@
     [self.password setEnabled:false ];
     
 }
-
--(void) didCheckLogin:(LoginDataController *)controller withLogin:(LoginData *)loginData
-{
-    /*
-     self.loginData.patID = loginData.patID;
-     self.loginData.practiceCode = loginData.practiceCode;
-     self.loginData.patientID = loginData.patientID;
-     self.loginData.premise = loginData.premise;
-     self.loginData.isAppointments = loginData.isAppointments;
-     self.loginData.isRepeats = loginData.isRepeats;
-     self.loginData.isTests = loginData.isTests;
-     self.loginData.bookings = loginData.bookings;
-     self.loginData.messages = loginData.messages;
-     */
-    [self.activityIndicator stopAnimating];
-    
-    [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
-}
-
 
 @end
