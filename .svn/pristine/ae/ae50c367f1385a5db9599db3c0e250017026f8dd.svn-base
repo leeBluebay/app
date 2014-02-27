@@ -1,0 +1,32 @@
+//
+//  DatesFreeViewController.h
+//  Appointments1
+//
+//  Created by brian macbride on 07/06/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "StaffFreeViewController.h"
+#import "SlotsFreeViewController.h"
+#import "DatesFreeDataController.h"
+#import "ClinicalConstants.h"
+
+@class DatesFreeViewController;
+
+@protocol DatesFreeViewControllerDelegate <NSObject>
+- (void)slotsFreeViewControllerDidFinish:(UIViewController *)controller slot:(AppointmentData*)appData;
+- (void)bookingsReturnHome:(UIViewController *)controller;
+@end
+
+@interface DatesFreeViewController : UITableViewController <StaffFreeViewControllerDelegate, SlotsFreeViewControllerDelegate, DatesFreeDataControllerDelegate>
+
+@property (strong, nonatomic) AppointmentData* appointmentData;
+
+@property (strong, nonatomic) DatesFreeDataController * datesFreeDataController;
+
+@property (weak, nonatomic) id <DatesFreeViewControllerDelegate> datesFreeDelegate;
+
+@property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+@end

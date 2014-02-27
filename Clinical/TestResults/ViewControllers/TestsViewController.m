@@ -1,0 +1,365 @@
+//
+//  TestsViewController.m
+//  Clinical
+//
+//  Created by brian macbride on 26/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import "TestsViewController.h"
+
+@interface TestsViewController ()
+@property (nonatomic, strong) RequestDataAccess *requestDataAccess;
+@property (nonatomic, strong) RequestData *requestData;
+@property (nonatomic) NSInteger requestCount;
+@property (nonatomic) NSInteger orient;
+@property (nonatomic) BOOL isSearching;
+@property (nonatomic) BOOL hasTests;
+@property (nonatomic) BOOL isError;
+@end
+
+@implementation TestsViewController
+
+@synthesize testsDataController = _testsDataController;
+@synthesize testsDelegate = _testsDelegate;
+@synthesize activityIndicator = _activityIndicator;
+@synthesize practiceCode = _practiceCode;
+@synthesize patientID = _patientID;
+@synthesize urlStr = _urlStr;
+
+@synthesize requestDataAccess = _requestDataAccess;
+@synthesize requestData = _requestData;
+@synthesize requestCount = _requestCount;
+@synthesize orient = _orient;
+@synthesize isSearching = _isSearching;
+@synthesize hasTests = _hasTests;
+@synthesize isError = _isError;
+
+- (id)initWithStyle:(UITableViewStyle)style
+{
+    self = [super initWithStyle:style];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    [self showToolbar];
+
+    self.requestDataAccess = [[RequestDataAccess alloc] init];
+    self.requestDataAccess.requestDataDelegate = self;
+    self.requestDataAccess.urlStr = self.urlStr;
+    
+    self.requestData = [[RequestData alloc] initWithPractice:self.practiceCode forPatient:self.patientID withRequest:@"7"];
+    
+    self.testsDataController = [[TestsDataController alloc] init];
+    [self.testsDataController addTest:@"Searching for test results..." withStatus:@"" onDate:@""];
+    
+    [self setSearching:YES hasTests:NO isError:NO];
+    
+    [self.activityIndicator setHidesWhenStopped:YES];
+    
+    [self setRequest];
+}
+
+- (void)viewDidUnload
+{
+    [self setActivityIndicator:nil];
+
+    [self setActivityIndicator:nil];
+    [super viewDidUnload];
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    return YES;
+}
+
+-(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
+{
+    if ((toInterfaceOrientation == UIInterfaceOrientationLandscapeLeft) || (toInterfaceOrientation == UIInterfaceOrientationLandscapeRight))
+    {
+        self.orient = 1;
+    }
+    else {
+        self.orient = 2;
+    }
+    [self.tableView reloadData];
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
+{
+    self.orient = 0;
+}
+
+- (void) setSearching:(BOOL)searching hasTests:(BOOL)tests isError:(BOOL)error
+{
+    self.isSearching = searching;
+    self.hasTests = tests;
+    self.isError = error;
+    
+    if (searching)
+    {
+        [self.activityIndicator startAnimating];
+        self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+        self.navigationItem.rightBarButtonItem = nil;
+        self.tableView.allowsSelection = NO;
+    }
+    else if (error) {
+        [self.activityIndicator stopAnimating];
+        self.navigationItem.rightBarButtonItem = nil;
+        self.tableView.allowsSelection = NO;
+        [self.tableView reloadData];
+    }
+    else {
+        [self.activityIndicator stopAnimating];
+        
+        if (tests)
+        {
+            self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+            self.tableView.allowsSelection = YES;
+        }
+        else {
+            self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+            self.navigationItem.rightBarButtonItem = nil;
+            self.tableView.allowsSelection = NO;
+            [self.testsDataController clearTests];
+            [self.testsDataController addTest:@"No current test results..." withStatus:@"" onDate:@""];
+        }
+        [self.tableView reloadData];
+    }
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return (NSInteger)[self.testsDataController.testsArray count];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    NSUInteger row = (NSUInteger)indexPath.row;
+    TestData *testData = [self.testsDataController.testsArray objectAtIndex:row];
+    
+    static NSString *cellIdentifier;
+    if (self.isError) {
+        cellIdentifier = @"errorCell";
+    }
+    else if (self.isSearching) {
+        cellIdentifier = @"searchingCell";
+    }
+    else {
+        cellIdentifier = @"testsCell";
+    }
+    
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
+    
+    UILabel *testLabel = (UILabel *)[cell viewWithTag:100];
+    
+    if (self.hasTests) {
+        testLabel.text = [NSString stringWithFormat:@"%@: %@ - %@", testData.testDate, testData.name, testData.status];
+
+        CGFloat labelWidth;
+        if (self.orient == 1) {
+            labelWidth = 380.0f;
+        }
+        else if (self.orient == 2) {
+            labelWidth = 220.0f;
+        }
+        else if ((self.interfaceOrientation == UIInterfaceOrientationLandscapeLeft) || (self.interfaceOrientation == UIInterfaceOrientationLandscapeRight))
+        {
+            labelWidth = 380.0f;
+        }
+        else {
+            labelWidth = 220.0f;
+        }
+        CGSize constraint = CGSizeMake(labelWidth, 300.0f);
+
+        CGSize size = [testLabel.text sizeWithFont:[UIFont systemFontOfSize:17.0f] constrainedToSize:constraint lineBreakMode:(NSLineBreakMode)UILineBreakModeWordWrap];
+        
+        float labelHeight;
+        if (size.height > 24.0f) {
+            labelHeight = size.height;
+        }
+        else {
+            labelHeight = 24.0f;
+        }
+        
+        [testLabel setFrame:CGRectMake(50.0f, 10.0f, labelWidth, labelHeight)];
+        
+        UIImageView *testImageView = (UIImageView *)[cell viewWithTag:200];
+        UIImage *testImage;
+        if ([testData.status isEqualToString:@"Contact Surgery"]) {
+            testImage = [UIImage imageNamed:@"alert.png"];
+        }
+        else {
+            testImage = [UIImage imageNamed:@"greentick.png"];
+        }
+
+        testImageView.image = testImage;
+        testImageView.center = CGPointMake(testImageView.center.x, (labelHeight/2) + 10.0f);
+    }
+    else {
+        testLabel.text = testData.name;
+        testLabel.textAlignment =  UITextAlignmentCenter;
+    }
+    
+    return cell;    
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath;
+{
+    float cellHeight;
+    
+    if (self.hasTests) {
+        TestData *testData = [self.testsDataController.testsArray objectAtIndex:(NSUInteger)indexPath.row];
+
+        NSString *text = [NSString stringWithFormat:@"%@: %@ - %@", testData.testDate, testData.name, testData.status];
+        
+        CGFloat labelWidth;
+        if (self.orient == 1) {
+            labelWidth = 380.0f;
+        }
+        else if (self.orient == 2) {
+            labelWidth = 220.0f;
+        }
+        else if ((self.interfaceOrientation == UIInterfaceOrientationLandscapeLeft) || (self.interfaceOrientation == UIInterfaceOrientationLandscapeRight))
+        {
+            labelWidth = 380.0f;
+        }
+        else {
+            labelWidth = 220.0f;
+        }
+        CGSize constraint = CGSizeMake(labelWidth, 300.0f);
+        
+        CGSize size = [text sizeWithFont:[UIFont systemFontOfSize:17.0f] constrainedToSize:constraint lineBreakMode:(NSLineBreakMode)UILineBreakModeWordWrap];
+        
+        if (size.height > 24.0f) {
+            cellHeight = size.height + 20.0f;
+        }
+        else {
+            cellHeight = 44.0f;
+        }
+    }
+    else if (self.isError) {
+        cellHeight = 120.0f;
+    }
+    else {
+        cellHeight = 44.0f;
+    }
+    
+    return cellHeight;
+}
+
+#pragma mark - Table view delegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+}
+
+#pragma mark - request data
+
+-(void) setRequest {
+    [self.requestDataAccess setRequest:self.requestData];
+}
+
+- (void)getRequest {
+    [self.requestDataAccess getRequest:self.requestData];
+}    
+
+#pragma mark - request data delegate
+
+-(void)didSetRequest {
+    self.requestCount = 1;
+    [self performSelector:@selector(getRequest) withObject:nil afterDelay:2];    
+}
+
+-(void)setRequestError:(NSString *)strError {
+    [self performSelector:@selector(getRequestError:) withObject:strError afterDelay:1.0];    
+}
+
+-(void)didGetRequest:(NSData *)responseData {
+    NSError* error;
+    NSDictionary* requestData = [NSJSONSerialization JSONObjectWithData:responseData options:kNilOptions error:&error];
+    
+    NSString* strEventData = [requestData objectForKey:@"EventData"];
+    
+    if ([strEventData isEqualToString:@"false"]) {
+        if (self.requestCount < 20) {
+            self.requestCount++;
+            [self performSelector:@selector(getRequest) withObject:nil afterDelay:1];    
+        }
+        else {
+            [self getRequestError:@"The request has timed out"];
+        }
+    }
+    else {
+        NSData* jsonEventData = [strEventData dataUsingEncoding:NSUTF8StringEncoding];
+        [self didGetTestsRequest:jsonEventData];
+    }
+}
+
+-(void)didGetTestsRequest:(NSData *)jsonEventData 
+{
+    NSError* error;
+    NSArray* eventData = [NSJSONSerialization JSONObjectWithData:jsonEventData options:kNilOptions error:&error];
+    
+    if ([eventData count] == 0) {
+        [self setSearching:NO hasTests:NO isError:NO];
+    }
+    else {
+        [self.testsDataController clearTests];
+        [self addTests:eventData wantUrgent:YES];
+        [self addTests:eventData wantUrgent:NO];
+        [self setSearching:NO hasTests:YES isError:NO];
+    }
+    
+    [self.requestDataAccess delRequest:self.requestData];
+}
+
+-(void)addTests: (NSArray*)addArray wantUrgent:(BOOL)urgent {
+    for (NSDictionary* testResult in addArray) {
+        BOOL isUrgent = [[testResult objectForKey:@"sta"] isEqualToString:@"Contact Surgery"];
+        if (isUrgent == urgent) {
+            NSString* name = [testResult objectForKey:@"nam"];
+            NSString* status = [testResult objectForKey:@"sta"];
+            NSString* testDate = [testResult objectForKey:@"dat"];
+            [self.testsDataController addTest:name withStatus:status onDate:testDate];
+        }
+    }
+}
+
+-(void)getRequestError:(NSString *)strError {
+    [self.testsDataController clearTests];
+    [self.testsDataController addTest:strError withStatus:@"" onDate:@""];
+    [self setSearching:NO hasTests:NO isError:YES];
+}
+
+#pragma mark - show toolbar
+
+- (void) showToolbar {
+    UIImage *buttonImage = [UIImage imageNamed:kHomeImage];
+    
+    UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [leftButton addTarget:self action:@selector(returnHome) forControlEvents:UIControlEventTouchUpInside];
+    [leftButton setImage:buttonImage forState:UIControlStateNormal];
+    leftButton.frame = CGRectMake(0.0, 0.0, buttonImage.size.width, buttonImage.size.height);
+    UIBarButtonItem *leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:leftButton];
+    
+    UIBarButtonItem *spaceBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+    
+    NSMutableArray * arr = [NSMutableArray arrayWithObjects:leftBarButtonItem, spaceBarButtonItem, nil];
+    [self setToolbarItems:arr animated:YES];
+}
+
+- (void)returnHome
+{
+    [self.testsDelegate returnHome:self];
+}
+
+@end

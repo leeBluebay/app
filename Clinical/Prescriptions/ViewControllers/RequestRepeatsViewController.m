@@ -1,0 +1,250 @@
+//
+//  RequestRepeatsViewController.m
+//  Clinical
+//
+//  Created by brian macbride on 17/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import "RequestRepeatsViewController.h"
+#import "SendRequestViewController.h"
+#import "SendRequestDataController.h"
+
+@interface RequestRepeatsViewController ()
+@end
+
+@implementation RequestRepeatsViewController
+
+@synthesize requestRepeatsDelegate = _requestRepeatsDelegate;
+@synthesize repeatsDataController = _repeatsDataController;
+@synthesize isRequestMore = _isRequestMore;
+@synthesize requestButton = _requestButton;
+@synthesize practiceCode = _practiceCode;
+@synthesize patientID = _patientID;
+@synthesize urlStr = _urlStr;
+
+- (id)initWithStyle:(UITableViewStyle)style
+{
+    self = [super initWithStyle:style];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    [self showToolbar];
+    self.requestButton.enabled = NO;
+
+    if (self.isRequestMore) {
+        self.title = @"Request more";
+    }
+}
+
+- (void)viewDidUnload
+{
+    [self setRequestButton:nil];
+    [super viewDidUnload];
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    return YES;
+}
+
+- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
+{
+    [self.tableView reloadData];
+}
+
+-(void) viewWillDisappear:(BOOL)animated {
+    if ([self.navigationController.viewControllers indexOfObject:self] == NSNotFound) {
+        [self.requestRepeatsDelegate requestRepeatsViewControllerReturn:self];
+    }
+    [super viewWillDisappear:animated];
+}
+
+-(void) setRequestEnable {
+    BOOL isEnable = NO;
+    for (RepeatStatusData *repeatStatusData in self.repeatsDataController.repeatsArray) {
+        for (RepeatData *repeatData in repeatStatusData.repeatsArray) {
+            if (repeatData.isSelected) {
+                isEnable = YES;
+            }
+        }
+    }
+    
+    self.requestButton.enabled = isEnable;
+}
+
+- (IBAction)request:(id)sender {
+    [self performSegueWithIdentifier:@"sendRequestSegue" sender:self];
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    if ([[segue identifier] isEqualToString:@"sendRequestSegue"]) {
+        
+        SendRequestViewController *sendRequestViewController = [segue destinationViewController];
+        
+        sendRequestViewController.urlStr = self.urlStr;
+        sendRequestViewController.practiceCode = self.practiceCode;
+        sendRequestViewController.patientID = self.patientID;
+        sendRequestViewController.isRequestMore = self.isRequestMore;
+        sendRequestViewController.sendRequestDataController = [[SendRequestDataController alloc] initWithSelectedArray:self.repeatsDataController.repeatsArray];
+        sendRequestViewController.sendRequestDelegate = self;
+    }
+}
+
+#pragma mark - Table view data source
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    
+    RepeatStatusData *repeatStatusData = [self.repeatsDataController.repeatsArray objectAtIndex:(NSUInteger)section];
+    return [repeatStatusData.status capitalizedString];
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return (NSInteger)[self.repeatsDataController.repeatsArray count];
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    RepeatStatusData *repeatStatusData = [self.repeatsDataController.repeatsArray objectAtIndex:(NSUInteger)section];
+    
+    return (NSInteger)[repeatStatusData.repeatsArray count];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    RepeatStatusData *repeatStatusData = [self.repeatsDataController.repeatsArray objectAtIndex:(NSUInteger)indexPath.section];
+    RepeatData *repeatData = [repeatStatusData.repeatsArray objectAtIndex:(NSUInteger)indexPath.row];
+
+    static NSString *cellIdentifier = @"repeatsCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
+    
+    UILabel *drugLabel = (UILabel *)[cell viewWithTag:100];
+    drugLabel.text = repeatData.name;
+    
+    CGFloat labelWidth;
+    if ((self.interfaceOrientation == UIInterfaceOrientationLandscapeLeft) || (self.interfaceOrientation == UIInterfaceOrientationLandscapeRight))
+    {
+        labelWidth = 400.0f;
+    }
+    else {
+        labelWidth = 250.0f;
+    }
+    CGSize constraint = CGSizeMake(labelWidth, 300.0f);
+    
+    CGSize size = [drugLabel.text sizeWithFont:[UIFont systemFontOfSize:17.0f] constrainedToSize:constraint lineBreakMode:(NSLineBreakMode)UILineBreakModeWordWrap];
+    
+    float labelHeight;
+    if (size.height > 24.0f) {
+        labelHeight = size.height;
+    }
+    else {
+        labelHeight = 24.0f;
+    }
+    
+    [drugLabel setFrame:CGRectMake(50.0f, 10.0f, labelWidth, labelHeight)];
+
+    UIImageView *drugImageView = (UIImageView *)[cell viewWithTag:200];
+    UIImage *drugImage;
+    if (repeatData.isSelected) {
+        drugImage = [UIImage imageNamed:@"tick.png"];
+    }
+    else {
+        drugImage = [UIImage imageNamed:@"untick.png"];
+    }
+    
+    drugImageView.image = drugImage;
+    drugImageView.center = CGPointMake(drugImageView.center.x, (labelHeight/2) + 10.0f);
+    
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath;
+{
+    float cellHeight;
+    
+    RepeatStatusData *repeatStatusData = [self.repeatsDataController.repeatsArray objectAtIndex:(NSUInteger)indexPath.section];
+    RepeatData *repeatData = [repeatStatusData.repeatsArray objectAtIndex:(NSUInteger)indexPath.row];
+    NSString *text = repeatData.name;
+    
+    CGFloat labelWidth;
+    if ((self.interfaceOrientation == UIInterfaceOrientationLandscapeLeft) || (self.interfaceOrientation == UIInterfaceOrientationLandscapeRight))
+    {
+        labelWidth = 400.0f;
+    }
+    else {
+        labelWidth = 250.0f;
+    }
+    CGSize constraint = CGSizeMake(labelWidth, 300.0f);
+    
+    CGSize size = [text sizeWithFont:[UIFont systemFontOfSize:17.0f] constrainedToSize:constraint lineBreakMode:(NSLineBreakMode)UILineBreakModeWordWrap];
+    
+    if (size.height > 24.0f) {
+        cellHeight = size.height + 20.0f;
+    }
+    else {
+        cellHeight = 44.0f;
+    }
+    
+    return cellHeight;
+}
+
+#pragma mark - Table view delegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    RepeatStatusData *repeatStatusData = [self.repeatsDataController.repeatsArray objectAtIndex:(NSUInteger)indexPath.section];
+    RepeatData *repeatData = [repeatStatusData.repeatsArray objectAtIndex:(NSUInteger)indexPath.row];
+    repeatData.isSelected = !repeatData.isSelected;
+    [self.tableView reloadRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
+    [self setRequestEnable];
+}
+
+#pragma mark - send request data delegate
+
+-(void) sendRequestViewControllerDidFinish:(SendRequestViewController *)controller
+{
+    [self.requestRepeatsDelegate requestRepeatsViewControllerDidFinish:self];
+    [self.tableView reloadData];
+}
+
+-(void) sendRequestViewControllerReturn:(SendRequestViewController *)controller
+{
+    [self.tableView reloadData];
+}
+
+-(void) returnHome:(UIViewController *)controller
+{
+    [self.requestRepeatsDelegate returnHome:self];
+}
+
+#pragma mark - show toolbar
+
+- (void) showToolbar {
+    UIImage *buttonImage = [UIImage imageNamed:kHomeImage];
+    
+    UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [leftButton addTarget:self action:@selector(returnHome) forControlEvents:UIControlEventTouchUpInside];
+    [leftButton setImage:buttonImage forState:UIControlStateNormal];
+    leftButton.frame = CGRectMake(0.0, 0.0, buttonImage.size.width, buttonImage.size.height);
+    UIBarButtonItem *leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:leftButton];
+    
+    UIBarButtonItem *spaceBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+    
+    NSMutableArray * arr = [NSMutableArray arrayWithObjects:leftBarButtonItem, spaceBarButtonItem, nil];
+    [self setToolbarItems:arr animated:YES];
+}
+
+- (void)returnHome
+{
+    [self.requestRepeatsDelegate returnHome:self];
+}
+
+@end

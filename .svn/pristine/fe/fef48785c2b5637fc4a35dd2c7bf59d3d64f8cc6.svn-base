@@ -1,0 +1,33 @@
+//
+//  ConfirmBookingViewController.h
+//  Clinical
+//
+//  Created by brian macbride on 10/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+#import "AppointmentData.h"
+#import "RequestDataAccess.h"
+
+@class ConfirmBookingViewController;
+
+@protocol ConfirmBookingViewControllerDelegate <NSObject>
+- (void)confirmBookingViewControllerDidFinish:(ConfirmBookingViewController *)controller;
+- (void)bookingsReturnHome:(UIViewController *)controller;
+@end
+
+@interface ConfirmBookingViewController : UIViewController <RequestDataDelegate>
+
+@property (weak, nonatomic) id <ConfirmBookingViewControllerDelegate> confirmBookingDelegate;
+
+@property (strong, nonatomic) AppointmentData* appointmentData;
+
+@property (strong, nonatomic) IBOutlet UILabel *confirmLabel;
+@property (strong, nonatomic) IBOutlet UILabel *errorLabel;
+@property (strong, nonatomic) IBOutlet UIBarButtonItem *doneButton;
+@property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+- (IBAction)done:(id)sender;
+
+@end

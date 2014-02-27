@@ -1,0 +1,44 @@
+//
+//  ClinicalDataController.m
+//  Clinical
+//
+//  Created by brian macbride on 26/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import "ClinicalDataController.h"
+
+@implementation ClinicalDataController
+
+@synthesize clinicalArray = _clinicalArray;
+
+- (id)init {
+    self = [super init];
+
+    return self;
+}
+
+- (id)initWithData: (LoginData*)loginData {
+    if (self = [self init]) {
+        [self initialiseSearchTypeArray:loginData];
+    }
+    return self;
+}
+
+- (void)initialiseSearchTypeArray: (LoginData*)loginData {
+    self.clinicalArray = [[NSMutableArray alloc] init];
+
+    if (loginData.isAppointments) {
+        [self.clinicalArray addObject:@"Appointments"];
+    }
+    
+    if (loginData.isRepeats) {
+        [self.clinicalArray addObject:@"Prescriptions"];
+    }
+    
+    if (loginData.isTests) {
+        [self.clinicalArray addObject:@"Test results"];
+    }
+}
+
+@end

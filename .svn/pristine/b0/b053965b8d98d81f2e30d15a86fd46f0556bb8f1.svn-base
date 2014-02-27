@@ -1,0 +1,13 @@
+//
+//  ClinicalConstants.h
+//  Clinical
+//
+//  Created by brian macbride on 31/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#define kBaseURL @"https://www.bluebaymedicalonline.co.uk/appsolution/appointappservice/MPService.svc/"
+#define kHomeImage @"Home.png"
+#define kTestLogin @"test1"
+#define kConnectionTimeout 10
+

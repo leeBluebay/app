@@ -1,0 +1,177 @@
+//
+//  DatesFreeViewController.m
+//  Appointments1
+//
+//  Created by brian macbride on 07/06/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import "DatesFreeViewController.h"
+
+@interface DatesFreeViewController ()
+@property (nonatomic) BOOL isError;
+@end
+
+@implementation DatesFreeViewController
+
+@synthesize datesFreeDataController = _datesFreeDataController;
+@synthesize datesFreeDelegate = _datesFreeDelegate;
+@synthesize activityIndicator = _activityIndicator;
+@synthesize appointmentData = _appointmentData;
+
+@synthesize isError = _isError;
+
+- (id)initWithStyle:(UITableViewStyle)style
+{
+    self = [super initWithStyle:style];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    self.isError = NO;
+    
+    [self.activityIndicator startAnimating];
+    [self.activityIndicator setHidesWhenStopped:YES];
+    
+    DatesFreeDataController * aDataController = [[DatesFreeDataController alloc] init];
+    self.datesFreeDataController = aDataController;
+    self.datesFreeDataController.datesFreeDataDelegate = self;
+    [self.datesFreeDataController getAppointmentDates:self.appointmentData];
+    
+    [self showToolbar];
+}
+
+- (void)viewDidUnload
+{
+    [self setDatesFreeDataController:nil];
+    [self setToolbarItems:nil];
+
+    [self setActivityIndicator:nil];
+
+    [super viewDidUnload];
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    return YES;
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return (NSInteger)[self.datesFreeDataController.datesFreeArray count];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString *CellIdentifier;
+    if (self.isError) {
+        CellIdentifier = @"errorCell";
+    }
+    else {
+        CellIdentifier = @"datesFreeCell";
+    }
+
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    NSUInteger row = (NSUInteger)indexPath.row;
+    
+    if (self.isError) 
+    {
+        [[cell textLabel] setText:[self.datesFreeDataController.datesFreeArray objectAtIndex:row]];
+    }
+    else {
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setTimeStyle:NSDateFormatterNoStyle];
+        
+        [dateFormatter setDateFormat:@"dd/MM/yyyy"];
+        NSDate *slotDate = [dateFormatter dateFromString:[self.datesFreeDataController.datesFreeArray objectAtIndex:row]];
+        
+        [dateFormatter setDateFormat:@"EEE dd MMM yyyy"];
+        NSString *strDate = [dateFormatter stringFromDate:slotDate];
+        [[cell textLabel] setText:strDate];
+    }
+
+    return cell;    
+}
+
+#pragma mark - StaffFree / SlotsFree view delegate
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    NSIndexPath *indexPath = [[self tableView] indexPathForSelectedRow];
+    NSString *strDate = [self.datesFreeDataController.datesFreeArray objectAtIndex:(NSUInteger)indexPath.row];
+    self.appointmentData.appointmentDate = strDate;
+    AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
+        
+    if ([[segue identifier] isEqualToString:@"datesClinicianSegue"]) {
+        StaffFreeViewController *staffFreeViewController = [segue destinationViewController];
+        staffFreeViewController.staffFreeDelegate = self;
+        staffFreeViewController.appointmentData = appData;
+    }
+    else if ([[segue identifier] isEqualToString:@"datesSlotsSegue"]) {
+        SlotsFreeViewController *slotsFreeViewController = [segue destinationViewController];
+        slotsFreeViewController.slotsFreeDelegate = self;
+        slotsFreeViewController.appointmentData = appData;
+    }
+}
+
+- (void)slotsFreeViewControllerDidFinish:(UIViewController *)controller slot:(AppointmentData *)appData;
+{
+    [[self datesFreeDelegate] slotsFreeViewControllerDidFinish:self slot:appData];
+}
+
+-(void)bookingsReturnHome:(UIViewController *)controller {
+    [self.datesFreeDelegate bookingsReturnHome:self];
+}
+
+#pragma mark - DatesFreeData delegate
+
+- (void)datesFreeDataControllerDidFinish;
+{
+    [self.activityIndicator stopAnimating];
+
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+    self.tableView.rowHeight = 44;
+    [self.tableView reloadData];    
+}
+
+- (void)datesFreeDataControllerHadError;
+{
+    [self.activityIndicator stopAnimating];
+    
+    self.isError = YES;
+    
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.rowHeight = 120;
+    [self.tableView reloadData];    
+}
+
+#pragma mark - show toolbar
+
+- (void) showToolbar {
+    UIImage *buttonImage = [UIImage imageNamed:kHomeImage];
+    
+    UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [leftButton addTarget:self action:@selector(returnHome) forControlEvents:UIControlEventTouchUpInside];
+    [leftButton setImage:buttonImage forState:UIControlStateNormal];
+    leftButton.frame = CGRectMake(0.0, 0.0, buttonImage.size.width, buttonImage.size.height);
+    UIBarButtonItem *leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:leftButton];
+    
+    UIBarButtonItem *spaceBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+    
+    NSMutableArray * arr = [NSMutableArray arrayWithObjects:leftBarButtonItem, spaceBarButtonItem, nil];
+    [self setToolbarItems:arr animated:YES];
+}
+
+- (void)returnHome
+{
+    [self.datesFreeDelegate bookingsReturnHome:self];
+}
+
+@end

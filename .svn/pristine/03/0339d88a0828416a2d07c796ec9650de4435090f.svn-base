@@ -1,0 +1,31 @@
+//
+//  TestData.m
+//  Clinical
+//
+//  Created by brian macbride on 26/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import "TestData.h"
+
+@implementation TestData
+
+@synthesize practiceCode = _practiceCode;
+@synthesize patientID = _patientID;
+@synthesize name = _name;
+@synthesize status = _status;
+@synthesize testDate = _testDate;
+
+-(id)init
+{
+    if ([super init]){
+        _practiceCode = @"";
+        _patientID = @"";
+        _name = @"";
+        _status = @"";
+        _testDate = @"";
+    }
+    return self;
+}
+
+@end

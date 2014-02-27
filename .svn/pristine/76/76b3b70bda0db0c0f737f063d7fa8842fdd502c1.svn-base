@@ -1,0 +1,53 @@
+//
+//  LoginData.m
+//  Appointments1
+//
+//  Created by brian macbride on 05/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import "LoginData.h"
+
+@implementation LoginData
+
+@synthesize practiceCode = _practiceCode;
+@synthesize patientID = _patientID;
+@synthesize premise = _premise;
+@synthesize isAppointments = _isAppointments;
+@synthesize isRepeats = _isRepeats;
+@synthesize isTests = _isTests;
+@synthesize bookings = _bookings;
+
+@synthesize username = _username;
+@synthesize password = _password;
+
+@synthesize error = _error;
+
+-(id)init
+{
+    if ([super init]){
+        _practiceCode = @"";
+        _patientID = @"";
+        _premise = @"";
+        _bookings = 0;
+    }
+    return self;
+}
+
+-(LoginData*)initWithData:(LoginData *)loginData
+{
+    if ([self init]) {
+        _practiceCode = loginData.practiceCode;
+        _patientID = loginData.patientID;
+        _premise = loginData.premise;
+        _isAppointments = loginData.isAppointments;
+        _isRepeats = loginData.isRepeats;
+        _isTests = loginData.isTests;
+        _bookings = loginData.bookings;
+    }
+    
+    return self;
+}
+
+
+@end

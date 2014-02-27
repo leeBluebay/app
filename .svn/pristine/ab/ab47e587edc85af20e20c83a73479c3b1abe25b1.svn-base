@@ -1,0 +1,130 @@
+//
+//  ClinicalViewController.m
+//  Clinical
+//
+//  Created by brian macbride on 09/07/2012.
+//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//
+
+#import "ClinicalViewController.h"
+
+@interface ClinicalViewController ()
+@end
+
+@implementation ClinicalViewController
+
+@synthesize loginData = _loginData;
+@synthesize appointmentData = _appointmentData;
+@synthesize repeatData = _repeatData;
+@synthesize clinicalDataController = _clinicalDataController;
+
+- (id)initWithStyle:(UITableViewStyle)style
+{
+    self = [super initWithStyle:style];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+
+    [self.navigationItem setHidesBackButton:YES];
+
+    self.clinicalDataController = [[ClinicalDataController alloc] initWithData:self.loginData];
+    
+    self.appointmentData = [[AppointmentData alloc] initWithPractice:self.loginData.practiceCode forPatient:self.loginData.patientID atPremise:self.loginData.premise];
+    self.repeatData = [[RepeatData alloc] initWithPractice:self.loginData.practiceCode forPatient:self.loginData.patientID];
+}
+
+- (void)viewDidUnload
+{
+    [super viewDidUnload];
+}
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+    return YES;
+}
+
+#pragma mark - Table view data source
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return (NSInteger)[self.clinicalDataController.clinicalArray count];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString* CellIdentifier;
+    CellIdentifier = @"clinicalCell";
+    
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    
+    int row = indexPath.row;
+    NSString * strSearch = [self.clinicalDataController.clinicalArray objectAtIndex:(NSUInteger)row];
+    [[cell textLabel] setText:strSearch];
+    
+    return cell;    
+}
+
+#pragma mark - Table view delegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    UIStoryboard *nextStoryboard;
+    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+    if ([cell.textLabel.text isEqualToString:@"Appointments"]) {
+        nextStoryboard = [UIStoryboard storyboardWithName:@"Appointments" bundle:nil];
+        UINavigationController *navController = [nextStoryboard instantiateInitialViewController];
+        [navController setModalTransitionStyle:UIModalTransitionStyleFlipHorizontal];
+        
+        BookingsViewController *bookingsViewController = [navController.viewControllers objectAtIndex:0];
+        
+        AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
+        bookingsViewController.appointmentData = appData;
+        bookingsViewController.bookings = self.loginData.bookings;
+        bookingsViewController.bookingsDelegate = self;
+        
+        [self presentModalViewController:navController animated:YES];
+    }
+    else if ([cell.textLabel.text isEqualToString:@"Prescriptions"]) {
+        nextStoryboard = [UIStoryboard storyboardWithName:@"Prescriptions" bundle:nil];
+        UINavigationController *navController = [nextStoryboard instantiateInitialViewController];
+        [navController setModalTransitionStyle:UIModalTransitionStyleFlipHorizontal];
+        
+        RepeatsViewController *repeatsViewController = [navController.viewControllers objectAtIndex:0];
+        repeatsViewController.repeatData = [[RepeatData alloc] initWithData:self.repeatData];
+        repeatsViewController.repeatsDelegate = self;
+        
+        [self presentModalViewController:navController animated:YES];
+    }
+    else if ([cell.textLabel.text isEqualToString:@"Test results"]) {
+        nextStoryboard = [UIStoryboard storyboardWithName:@"TestResults" bundle:nil];
+        UINavigationController *navController = [nextStoryboard instantiateInitialViewController];
+        [navController setModalTransitionStyle:UIModalTransitionStyleFlipHorizontal];
+        
+        TestsViewController *testsViewController = [navController.viewControllers objectAtIndex:0];
+        testsViewController.practiceCode = self.loginData.practiceCode;
+        testsViewController.patientID = self.loginData.patientID;
+        testsViewController.testsDelegate = self;
+        
+        [self presentModalViewController:navController animated:YES];
+    }
+}
+
+#pragma mark - child view controller delegate
+
+-(void) returnHome:(UIViewController *)controller {
+    [self dismissModalViewControllerAnimated:YES];
+}
+
+-(void) bookingsReturnHome:(UIViewController *)controller {
+    BookingsViewController *bookingsViewController = (BookingsViewController*)controller;
+    self.appointmentData.premise = bookingsViewController.appointmentData.premise;
+    [self dismissModalViewControllerAnimated:YES];
+}
+
+@end
