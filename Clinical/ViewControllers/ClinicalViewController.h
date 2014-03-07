@@ -16,14 +16,10 @@
 #import "RepeatsViewController.h"
 #import "TestsViewController.h"
 #import "MessagesViewController.h"
-#import "SignalR.h"
-#import "AuthResponse.h"
+
 @interface ClinicalViewController : UITableViewController <BookingsViewControllerDelegate, RepeatsViewControllerDelegate, TestsViewControllerDelegate, MessagesViewControllerDelegate>
 
-@property (strong, nonatomic) AuthResponse *authresponse;
-@property (strong, nonatomic, readwrite) SRHubConnection *connection;
-@property (strong, nonatomic, readwrite) SRHubProxy *hub;
-
+@property (strong, nonatomic) LoginData *loginData;
 @property (strong, nonatomic) AppointmentData *appointmentData;
 @property (strong, nonatomic) RepeatData *repeatData;
 

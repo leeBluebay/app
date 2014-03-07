@@ -18,10 +18,9 @@
     return self;
 }
 
-
-- (id)initWithData: (AuthResponse*)authResponse {
+- (id)initWithData: (LoginData*)loginData {
     if (self = [self init]) {
-        [self initialiseSearchTypeArray:authResponse];
+        [self initialiseSearchTypeArray:loginData];
     }
     return self;
 }
@@ -48,21 +47,21 @@
     }
 }
 
-- (void)initialiseSearchTypeArray: (AuthResponse*)authResponse {
+- (void)initialiseSearchTypeArray: (LoginData*)loginData {
     self.clinicalArray = [[NSMutableArray alloc] init];
-    
+
     [self.clinicalArray addObject:@"Messages"];
-    [self showNewMessages:authResponse.Patient.NumberOfNewMessages];
-    
-    if (authResponse.Patient.HasAppointments) {
+    [self showNewMessages:(NSUInteger)[loginData.messages integerValue]];
+
+    if (loginData.isAppointments) {
         [self.clinicalArray addObject:@"Appointments"];
     }
     
-    if (authResponse.Patient.HasRepeats) {
+    if (loginData.isRepeats) {
         [self.clinicalArray addObject:@"Prescriptions"];
     }
     
-    if (authResponse.Patient.HasTests) {
+    if (loginData.isTests) {
         [self.clinicalArray addObject:@"Test results"];
     }
 }

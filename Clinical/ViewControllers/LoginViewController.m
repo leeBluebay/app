@@ -8,17 +8,14 @@
 
 #import "LoginViewController.h"
 #import "ClinicalViewController.h"
-#import "AuthResponse.h"
-#import "Router.h"
 
 @interface LoginViewController ()
 @property (nonatomic, strong) LoginDataController *loginDataController;
-
 @end
 
 @implementation LoginViewController
 
-//@synthesize loginData = _loginData;
+@synthesize loginData = _loginData;
 @synthesize loginDataController = _loginDataController;
 @synthesize username = _username;
 @synthesize password = _password;
@@ -26,7 +23,6 @@
 @synthesize messageLabel = _messageLabel;
 @synthesize doneButton = _doneButton;
 @synthesize strUrl = _strUrl;
-
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -41,6 +37,8 @@
 {
     [super viewDidLoad];
     
+    [self.username becomeFirstResponder];
+    
     self.messageLabel.text = @"";
     
     [self.activityIndicator setHidesWhenStopped:YES];
@@ -50,34 +48,13 @@
     self.loginDataController = [[LoginDataController alloc] init];
     self.loginDataController.loginDataDelegate = self;
     
-    /*
     self.loginData = [[LoginData alloc] init];
     self.loginData.url = self.strUrl;
     self.loginData.practiceCode = @"EMIS12";
     self.loginData.patientID = @"30";
-    */
     
     self.username.delegate = self;
     self.password.delegate = self;
-    
-    
-    _connection = [SRHubConnection connectionWithURL: [Router sharedRouter].server_url];
-    _hub = [_connection createHubProxy:@"GatewayHub"];
-    
-    
-    __weak __typeof(&*self)weakSelf = self;
-    
-    _connection.started = ^{
-        __strong __typeof(&*weakSelf)strongSelf = weakSelf;
-        [strongSelf.username setEnabled:true ];
-        [strongSelf.password setEnabled:true ];
-        
-        [strongSelf.username becomeFirstResponder];
-    };
-    
-    [_connection start];
-    
-    [_hub on:@"authenticationResult" perform:self selector:@selector(authenticationResult:)];
 }
 
 - (void)viewDidUnload
@@ -123,7 +100,7 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"clinicalSegue"]) {
         ClinicalViewController *clinicalViewController = [segue destinationViewController];
-        clinicalViewController.authresponse = self.authResponse;
+        clinicalViewController.loginData = [[LoginData alloc] initWithData:self.loginData];
     }
 }
 
@@ -136,59 +113,57 @@
 }
 
 - (IBAction)login:(id)sender {
+    NSString *username;
+    if (![self.username.text isEqualToString:@""]) {
+        username = self.username.text;
+    }
+    else {
+        username = kTestLogin;
+    }
+    
+    NSString *password;
+    if (![self.password.text isEqualToString:@""]) {
+        password = self.password.text;
+    }
+    else if (![kTestPassword isEqualToString:@""]) {
+        password = kTestPassword;
+    }
+    else {
+        password = @"xxx";
+    }
+    
 
     if (self.activityIndicator.hidden)
     {
         [self.activityIndicator startAnimating];
-        [self doLogin];
+        [self.loginDataController checkLogin:username withPassword:password at:self.strUrl];
     }
 }
 
 #pragma mark - Login Data delegate
 
-- (void) authenticationResult:(NSString *) jsonData
+-(void) didCheckLogin:(LoginDataController *)controller withLogin:(LoginData *)loginData
 {
-   
-    AuthResponse *authResponse = [AuthResponse convertFromJson:jsonData];
+    self.loginData.patID = loginData.patID;
+    self.loginData.practiceCode = loginData.practiceCode;
+    self.loginData.patientID = loginData.patientID;
+    self.loginData.premise = loginData.premise;
+    self.loginData.isAppointments = loginData.isAppointments;
+    self.loginData.isRepeats = loginData.isRepeats;
+    self.loginData.isTests = loginData.isTests;
+    self.loginData.bookings = loginData.bookings;
+    self.loginData.messages = loginData.messages;
     
-    if(authResponse.Success)
-    {
-        self.authResponse = authResponse;
-        [self.activityIndicator stopAnimating];
-        [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
-        
-    }
-    else
-    {
-        UIAlertView *a = [[UIAlertView alloc] initWithTitle:@"Fail" message:@"Invalid credentials" delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"OK", nil];
-        [a show];
-        
-        
-        self.messageLabel.text = @"Login failed";
-        
-        [self.username setEnabled:true ];
-        [self.password setEnabled:true ];
-        
-        [self.activityIndicator stopAnimating];
-    }
+    [self.activityIndicator stopAnimating];
     
+    [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
 }
 
-- (void) doLogin
+-(void) didFailLogin:(LoginDataController *)controller withLogin:(LoginData *)loginData
 {
-    if([self.username.text length] == 0 && [self.password.text length] == 0)
-    {
-        return;
-    }
-    
-    NSString *request = [NSString stringWithFormat:@"{Username: '%@', Password: '%@'}", self.username.text, self.password.text];
-    
-    [_hub invoke:@"AuthenticatePatient" withArgs:@[request]];
-    
-    
-    [self.username setEnabled:false ];
-    [self.password setEnabled:false ];
-    
+    [self.activityIndicator stopAnimating];
+
+    self.messageLabel.text = loginData.error;
 }
 
 @end

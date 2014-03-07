@@ -9,14 +9,11 @@
 #import <UIKit/UIKit.h>
 #import "LoginDataController.h"
 #import "LoginData.h"
-#import "SignalR.h"
-#import "AuthResponse.h"
 
 @interface LoginViewController : UIViewController <UITextFieldDelegate, LoginDataControllerDelegate>
 
 @property (nonatomic, copy) NSString* strUrl;
-@property (strong, nonatomic) AuthResponse *authResponse;
-
+@property (strong, nonatomic) LoginData *loginData;
 @property (strong, nonatomic) IBOutlet UITextField *username;
 @property (strong, nonatomic) IBOutlet UITextField *password;
 
@@ -24,9 +21,6 @@
 
 @property (strong, nonatomic) IBOutlet UILabel *messageLabel;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *doneButton;
-
-@property (strong, nonatomic, readwrite) SRHubConnection *connection;
-@property (strong, nonatomic, readwrite) SRHubProxy *hub;
 
 - (IBAction)editChange:(id)sender;
 - (IBAction)passwordChange:(id)sender;

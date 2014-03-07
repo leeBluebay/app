@@ -7,13 +7,14 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AuthResponse.h"
+#import "LoginData.h"
 
 @interface ClinicalDataController : NSObject
 
 @property (strong, nonatomic) NSMutableArray *clinicalArray;
 
-- (id)initWithData: (AuthResponse*)authResponse;
+- (id)initWithData: (LoginData*)loginData;
+
 -(void) showNewMessages:(NSUInteger)newMessages;
 
 @end

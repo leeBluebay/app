@@ -11,7 +11,6 @@
 #import "LoginViewController.h"
 #import "RequestDataAccess.h"
 #import "ClinicalApplication.h"
-#import "AuthResponse.h"
 
 @implementation AppDelegate
 
@@ -24,10 +23,8 @@
     LoginViewController *login = (LoginViewController*)[[loginNav viewControllers] objectAtIndex:0];
     
     RequestDataAccess *requestDataAccess = [[RequestDataAccess alloc] init];
-    //LoginData *loginData = login.loginData;
-    AuthResponse *authresponse = login.authResponse;
-    
-    RequestData *reqData = [[RequestData alloc] initWithPractice:authresponse.Patient.PracticeCode forPatient:authresponse.Patient.PracticePatientId withRequest:@"0"];
+    LoginData *loginData = login.loginData;
+    RequestData *reqData = [[RequestData alloc] initWithPractice:loginData.practiceCode forPatient:loginData.patientID withRequest:@"0"];
     [requestDataAccess delRequest:reqData];
     
     UINavigationController *presented = (UINavigationController*)[login presentedViewController];

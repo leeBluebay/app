@@ -7,6 +7,7 @@
 //
 
 #import "OrderRepeatsViewController.h"
+#import "PharmacySelectViewController.h"
 
 @interface OrderRepeatsViewController ()
 @property (nonatomic) NSInteger requestCount;
@@ -41,6 +42,11 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    
+    
+    self.pharmacyLabel.hidden = true;
+    self.yesButton.hidden = true;
+    self.noButton.hidden = true;
 
     [self.navigationItem setHidesBackButton:YES];
     self.navigationItem.rightBarButtonItem = nil;
@@ -92,6 +98,11 @@
     [self.navigationItem setHidesBackButton:NO];
 }
 
+
+- (IBAction)returnHome:(id)sender {
+    [self.orderRepeatsDelegate returnHome:self];
+}
+
 #pragma mark - request data delegate
 
 -(void)didSetRequest {
@@ -123,6 +134,10 @@
         [self.activityIndicator stopAnimating];
         self.navigationItem.rightBarButtonItem = self.doneButton;
         [self.requestDataAccess delRequest:self.requestData];
+        
+        self.pharmacyLabel.hidden = false;
+        self.yesButton.hidden = false;
+        self.noButton.hidden = false;
     }
 }
 
@@ -150,6 +165,12 @@
 - (void)returnHome
 {
     [self.orderRepeatsDelegate returnHome:self];
+}
+
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
+{
+    PharmacySelectViewController * pharmacySelectViewController = [segue destinationViewController];
+    pharmacySelectViewController.pharmacySelectViewControllerDelegate = self;
 }
 
 @end
