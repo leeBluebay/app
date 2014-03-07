@@ -42,6 +42,8 @@
                                                     selector:@selector(timeCheck) 
                                                     userInfo:nil 
                                                      repeats:YES];
+    
+    // test
 }
 
 -(void) stopTimer {
