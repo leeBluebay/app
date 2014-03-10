@@ -8,21 +8,23 @@
 
 #import "LoginViewController.h"
 #import "ClinicalViewController.h"
+#import "SignalR.h"
+#import "Router.h"
 
 @interface LoginViewController ()
-@property (nonatomic, strong) LoginDataController *loginDataController;
+@property (strong, nonatomic) NSTimer *connectionTimer;
 @end
 
 @implementation LoginViewController
 
-@synthesize loginData = _loginData;
-@synthesize loginDataController = _loginDataController;
 @synthesize username = _username;
 @synthesize password = _password;
 @synthesize activityIndicator = _activityIndicator;
 @synthesize messageLabel = _messageLabel;
 @synthesize doneButton = _doneButton;
 @synthesize strUrl = _strUrl;
+
+bool isConnected = false;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -45,16 +47,38 @@
     
     self.navigationItem.rightBarButtonItem = nil;
     
-    self.loginDataController = [[LoginDataController alloc] init];
-    self.loginDataController.loginDataDelegate = self;
-    
-    self.loginData = [[LoginData alloc] init];
-    self.loginData.url = self.strUrl;
-    self.loginData.practiceCode = @"EMIS12";
-    self.loginData.patientID = @"30";
-    
     self.username.delegate = self;
     self.password.delegate = self;
+    
+    [self setupSignalR];
+    
+    _connectionTimer = [NSTimer scheduledTimerWithTimeInterval: 15
+                                                        target: self
+                                                      selector:@selector(onConnectionTimerTick:)
+                                                      userInfo: nil repeats:NO];
+}
+
+- (void) setupSignalR
+{
+    _connection = [SRHubConnection connectionWithURL: [Router sharedRouter].server_url];
+    _hub = [_connection createHubProxy:@"GatewayHub"];
+    
+    
+    __weak __typeof(&*self)weakSelf = self;
+    
+    _connection.started = ^{
+        __strong __typeof(&*weakSelf)strongSelf = weakSelf;
+        [strongSelf.username setEnabled:true ];
+        [strongSelf.password setEnabled:true ];
+        
+        [strongSelf.username becomeFirstResponder];
+        
+        isConnected = true;
+    };
+    
+    [_connection start];
+    
+    [_hub on:@"authenticationResult" perform:self selector:@selector(authenticationResult:)];
 }
 
 - (void)viewDidUnload
@@ -64,6 +88,9 @@
     [self setActivityIndicator:nil];
     [self setMessageLabel:nil];
     [self setDoneButton:nil];
+    
+    _connectionTimer = nil;
+    
     [super viewDidUnload];
     // Release any retained subviews of the main view.
 }
@@ -100,7 +127,9 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"clinicalSegue"]) {
         ClinicalViewController *clinicalViewController = [segue destinationViewController];
-        clinicalViewController.loginData = [[LoginData alloc] initWithData:self.loginData];
+        clinicalViewController.connection = _connection;
+        clinicalViewController.hub = _hub;
+        clinicalViewController.authResponse = self.authResponse;
     }
 }
 
@@ -113,57 +142,116 @@
 }
 
 - (IBAction)login:(id)sender {
-    NSString *username;
-    if (![self.username.text isEqualToString:@""]) {
-        username = self.username.text;
-    }
-    else {
-        username = kTestLogin;
-    }
     
-    NSString *password;
-    if (![self.password.text isEqualToString:@""]) {
-        password = self.password.text;
-    }
-    else if (![kTestPassword isEqualToString:@""]) {
-        password = kTestPassword;
-    }
-    else {
-        password = @"xxx";
-    }
-    
-
     if (self.activityIndicator.hidden)
     {
         [self.activityIndicator startAnimating];
-        [self.loginDataController checkLogin:username withPassword:password at:self.strUrl];
+        [self doLogin];
     }
 }
 
 #pragma mark - Login Data delegate
 
--(void) didCheckLogin:(LoginDataController *)controller withLogin:(LoginData *)loginData
+- (void) authenticationResult:(NSString *) jsonData
 {
-    self.loginData.patID = loginData.patID;
-    self.loginData.practiceCode = loginData.practiceCode;
-    self.loginData.patientID = loginData.patientID;
-    self.loginData.premise = loginData.premise;
-    self.loginData.isAppointments = loginData.isAppointments;
-    self.loginData.isRepeats = loginData.isRepeats;
-    self.loginData.isTests = loginData.isTests;
-    self.loginData.bookings = loginData.bookings;
-    self.loginData.messages = loginData.messages;
     
-    [self.activityIndicator stopAnimating];
+    AuthResponse *authResponse = [AuthResponse convertFromJson:jsonData];
     
-    [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
+    if(authResponse.Success)
+    {
+        self.authResponse = authResponse;
+        [self.activityIndicator stopAnimating];
+        [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
+        
+    }
+    else
+    {
+        NSString *message = @"Invalid credentials";
+        
+        
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Error"
+                                   message:message
+                                  delegate:self
+                         cancelButtonTitle:@"OK"
+                         otherButtonTitles:nil, nil];
+        
+        
+        
+        [alert show];
+        
+        self.messageLabel.text = @"Login failed";
+        
+        [self.username setEnabled:true ];
+        [self.password setEnabled:true ];
+        
+        [self.activityIndicator stopAnimating];
+    }
+    
 }
 
--(void) didFailLogin:(LoginDataController *)controller withLogin:(LoginData *)loginData
+- (void) doLogin
 {
-    [self.activityIndicator stopAnimating];
-
-    self.messageLabel.text = loginData.error;
+    if([self.username.text length] == 0 && [self.password.text length] == 0)
+    {
+        return;
+    }
+    
+    NSString *request = [NSString stringWithFormat:@"{Username: '%@', Password: '%@'}", self.username.text, self.password.text];
+    
+    [_hub invoke:@"AuthenticatePatient" withArgs:@[request]];
+    
+    _connectionTimer = nil;
+    
+    _connectionTimer = [NSTimer scheduledTimerWithTimeInterval: [Router sharedRouter].methodTimeout
+                                                        target: self
+                                                      selector:@selector(onLoginTick:)
+                                                      userInfo: nil repeats:NO];
+    
+    
+    [self.username setEnabled:false ];
+    [self.password setEnabled:false ];
+    
 }
 
+
+-(void)onConnectionTimerTick:(NSTimer *)timer {
+    if(!isConnected)
+    {
+        NSString *message = @"Unable to connect to server";
+        
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Error"
+                                                        message:message
+                                                       delegate:self
+                                              cancelButtonTitle:@"OK"
+                                              otherButtonTitles:nil, nil];
+        
+        
+        
+        [alert show];
+        
+        [self.username setEnabled:false ];
+        [self.password setEnabled:false ];
+    }
+}
+
+-(void)onLoginTick:(NSTimer *)timer {
+    if(!isConnected)
+    {
+        NSString *message = @"Unable to login";
+        
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Error"
+                                                        message:message
+                                                       delegate:self
+                                              cancelButtonTitle:@"OK"
+                                              otherButtonTitles:nil, nil];
+        
+        
+        
+        [alert show];
+        
+        [self.username setEnabled:false ];
+        [self.password setEnabled:false ];
+    }
+}
 @end
+

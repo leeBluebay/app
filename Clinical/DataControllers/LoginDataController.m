@@ -13,41 +13,6 @@
 
 @synthesize loginDataDelegate = _loginDataDelegate;
 
-- (void)checkLogin:(NSString *)username withPassword:(NSString *)password at:(NSString*)strUrl;
-{
-    NSDictionary* requestData = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 username, @"Username",
-                                 password, @"Password",
-                                 nil];
-    
-    NSDictionary* jsonDictionary = [NSDictionary dictionaryWithObjectsAndKeys:requestData, @"loginData", nil];
-    
-    NSData *jsonData = nil;
-    NSString *jsonString = nil;
-    
-    if([NSJSONSerialization isValidJSONObject:jsonDictionary])
-    {
-        jsonData = [NSJSONSerialization dataWithJSONObject:requestData options:0 error:nil];
-        jsonString = [[NSString alloc]initWithData:jsonData encoding:NSUTF8StringEncoding];
-    }
-    
-    NSString *urlString = [strUrl stringByAppendingString:@"CheckPatient"];
-    NSURL * url = [NSURL URLWithString:urlString];    
-    NSMutableURLRequest *request= [NSMutableURLRequest requestWithURL:url 
-                                                          cachePolicy:NSURLRequestUseProtocolCachePolicy 
-                                                      timeoutInterval:kConnectionTimeout];
-    
-    [request setValue:@"application/json" forHTTPHeaderField:@"Content-type"];
-    [request setValue:jsonString forHTTPHeaderField:@"json"];
-    [request setHTTPMethod:@"POST"];
-    [request setHTTPBody:jsonData];
-    
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] 
-                           completionHandler:^(NSURLResponse *response, NSData *data, NSError *error){
-                               [self responseHandler:response Data:data Error:error];
-                           }];
-}
-
 -(void)responseHandler:(NSURLResponse*)response Data:(NSData*)data Error:(NSError*)error
 {
     LoginData *loginData = [[LoginData alloc] init];
