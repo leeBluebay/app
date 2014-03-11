@@ -30,4 +30,5 @@
 @property (strong, nonatomic) SRHubConnection *connection;
 @property (strong, nonatomic) SRHubProxy *hub;
 
+
 @end
