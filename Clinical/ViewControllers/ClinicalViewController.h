@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
-#import "LoginData.h"
 #import "AppointmentData.h"
 #import "RepeatData.h"
 #import "ClinicalDataController.h"
@@ -22,7 +21,6 @@
 
 @interface ClinicalViewController : UITableViewController <BookingsViewControllerDelegate, RepeatsViewControllerDelegate, TestsViewControllerDelegate, MessagesViewControllerDelegate>
 
-@property (strong, nonatomic) LoginData *loginData;
 @property (strong, nonatomic) AppointmentData *appointmentData;
 @property (strong, nonatomic) RepeatData *repeatData;
 

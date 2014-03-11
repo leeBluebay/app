@@ -7,6 +7,7 @@
 //
 
 #import "ClinicalDataController.h"
+#import "AuthResponse.h"
 
 @implementation ClinicalDataController
 
@@ -18,9 +19,10 @@
     return self;
 }
 
-- (id)initWithData: (LoginData*)loginData {
+- (id)initWithData: (AuthResponse*)passedInAuthResponse {
     if (self = [self init]) {
-        [self initialiseSearchTypeArray:loginData];
+        self.authResponse = passedInAuthResponse;
+        [self initialiseSearchTypeArray];
     }
     return self;
 }
@@ -47,21 +49,22 @@
     }
 }
 
-- (void)initialiseSearchTypeArray: (LoginData*)loginData {
+- (void)initialiseSearchTypeArray
+{
     self.clinicalArray = [[NSMutableArray alloc] init];
 
     [self.clinicalArray addObject:@"Messages"];
-    [self showNewMessages:(NSUInteger)[loginData.messages integerValue]];
+    [self showNewMessages:(NSUInteger)self.authResponse.Patient.NumberOfNewMessages];
 
-    if (loginData.isAppointments) {
+    if (self.authResponse.Patient.HasAppointments) {
         [self.clinicalArray addObject:@"Appointments"];
     }
     
-    if (loginData.isRepeats) {
+    if (self.authResponse.Patient.HasRepeats) {
         [self.clinicalArray addObject:@"Prescriptions"];
     }
     
-    if (loginData.isTests) {
+    if (self.authResponse.Patient.HasTests) {
         [self.clinicalArray addObject:@"Test results"];
     }
 }

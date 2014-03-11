@@ -13,7 +13,6 @@
 
 @implementation ClinicalViewController
 
-@synthesize loginData = _loginData;
 @synthesize appointmentData = _appointmentData;
 @synthesize repeatData = _repeatData;
 @synthesize clinicalDataController = _clinicalDataController;
@@ -33,10 +32,14 @@
 
     [self.navigationItem setHidesBackButton:YES];
     
-    self.clinicalDataController = [[ClinicalDataController alloc] initWithData:self.loginData];
+    self.clinicalDataController = [[ClinicalDataController alloc] initWithData:self.authResponse];
     
-    self.appointmentData = [[AppointmentData alloc] initWithPractice:self.loginData.practiceCode forPatient:self.loginData.patientID atPremise:self.loginData.premise];
-    self.repeatData = [[RepeatData alloc] initWithPractice:self.loginData.practiceCode forPatient:self.loginData.patientID];
+    self.appointmentData = [[AppointmentData alloc] initWithPractice:self.authResponse.Patient.PracticeCode
+                                                          forPatient:self.authResponse.Patient.PracticePatientId
+                                                           atPremise:self.authResponse.Patient.DefaultLocation];
+    
+    self.repeatData = [[RepeatData alloc] initWithPractice:self.authResponse.Patient.PracticeCode
+                                                forPatient:self.authResponse.Patient.PracticePatientId];
 }
 
 - (void)viewDidUnload
@@ -85,10 +88,12 @@
         MessagesViewController *messagesViewController = [navController.viewControllers objectAtIndex:0];
         
         MessageData *messData = [[MessageData alloc] init];
+        /**
         messData.url = self.loginData.url;
         messData.practiceCode = self.loginData.practiceCode;
         messData.patID = [self.loginData.patID stringValue];
         messagesViewController.messageData = messData;
+         **/
         messagesViewController.messagesDelegate = self;
 
         [self presentModalViewController:navController animated:YES];
@@ -101,9 +106,11 @@
         BookingsViewController *bookingsViewController = [navController.viewControllers objectAtIndex:0];
         
         AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
+         /**
         bookingsViewController.urlStr = self.loginData.url;
         bookingsViewController.appointmentData = appData;
         bookingsViewController.bookings = self.loginData.bookings;
+          **/
         bookingsViewController.bookingsDelegate = self;
         
         [self presentModalViewController:navController animated:YES];
@@ -114,7 +121,9 @@
         [navController setModalTransitionStyle:UIModalTransitionStyleCoverVertical];
         
         RepeatsViewController *repeatsViewController = [navController.viewControllers objectAtIndex:0];
+         /**
         repeatsViewController.urlStr = self.loginData.url;
+          **/
         repeatsViewController.repeatData = [[RepeatData alloc] initWithData:self.repeatData];
         repeatsViewController.repeatsDelegate = self;
         
@@ -126,9 +135,11 @@
         [navController setModalTransitionStyle:UIModalTransitionStyleCoverVertical];
         
         TestsViewController *testsViewController = [navController.viewControllers objectAtIndex:0];
+         /**
         testsViewController.urlStr = self.loginData.url;
         testsViewController.practiceCode = self.loginData.practiceCode;
         testsViewController.patientID = self.loginData.patientID;
+          **/
         testsViewController.testsDelegate = self;
         
         [self presentModalViewController:navController animated:YES];
