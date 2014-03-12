@@ -91,49 +91,6 @@
     self.errorLabel.hidden = YES;
 }
 
-
-#pragma mark - Delete Message
-
-- (void) getResponse:(NSString *) jsonData
-{
-    
-    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
-    
-    if (appResponse.IsError)
-    {
-        [[self.messageDataController messageDataDelegate] messageDataControllerHadError:appResponse.Error];
-        return;
-    }
-    
-    if(appResponse.JData == nil)
-    {
-        [[self.messageDataController messageDataDelegate] messageDataControllerHadError:@"No response from surgery"];
-        return;
-    }
-    
-    if([appResponse.CallbackMethod  isEqual: @"GetPatientMessage"])
-    {
-        [self processGetPatientMessageResponse:appResponse];
-    }
-    
-    if([appResponse.CallbackMethod  isEqual: @"UpdatePatientMessage"])
-    {
-        [self processUpdatePatientMessageResponse:appResponse];
-    }
-}
-
--(void)processUpdatePatientMessageResponse:(AppResponse*)appResponse
-{
-    [[self.messageDataController messageDataDelegate] messageDataControllerDidDelete];
-}
-
--(void)processGetPatientMessageResponse:(AppResponse*)appResponse
-{
-    PatientMessage *message = [PatientMessage convertFromNsDictionary:appResponse.jObject];
-            
-    [[self.messageDataController messageDataDelegate] messageDataControllerDidFinish:message.Body];
-}
-
 - (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex
 {
     if ([[actionSheet buttonTitleAtIndex:buttonIndex] isEqualToString:@"Yes"]) {
@@ -208,6 +165,49 @@
 - (void)returnHome
 {
     [self.messageDelegate messagesReturnHome:self];
+}
+
+
+#pragma mark - signalR responses
+
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if (appResponse.IsError)
+    {
+        [[self.messageDataController messageDataDelegate] messageDataControllerHadError:appResponse.Error];
+        return;
+    }
+    
+    if(appResponse.JData == nil)
+    {
+        [[self.messageDataController messageDataDelegate] messageDataControllerHadError:@"No response from surgery"];
+        return;
+    }
+    
+    if([appResponse.CallbackMethod  isEqual: @"GetPatientMessage"])
+    {
+        [self processGetPatientMessageResponse:appResponse];
+    }
+    
+    if([appResponse.CallbackMethod  isEqual: @"UpdatePatientMessage"])
+    {
+        [self processUpdatePatientMessageResponse:appResponse];
+    }
+}
+
+-(void)processUpdatePatientMessageResponse:(AppResponse*)appResponse
+{
+    [[self.messageDataController messageDataDelegate] messageDataControllerDidDelete];
+}
+
+-(void)processGetPatientMessageResponse:(AppResponse*)appResponse
+{
+    PatientMessage *message = [PatientMessage convertFromNsDictionary:appResponse.jObject];
+    
+    [[self.messageDataController messageDataDelegate] messageDataControllerDidFinish:message.Body];
 }
 
 @end

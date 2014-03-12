@@ -224,6 +224,8 @@
         [self.messagesDelegate messagesReturnHome:self withNew:[self.messagesDataController newMessageCount]];
 }
 
+#pragma mark - signalR responses
+
 - (void) getResponse:(NSString *) jsonData
 {
     
