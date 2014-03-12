@@ -25,6 +25,8 @@
 @synthesize strUrl = _strUrl;
 
 bool isConnected = false;
+bool isLoggedIn = false;
+
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -152,8 +154,17 @@ bool isConnected = false;
 
 #pragma mark - Login Data delegate
 
+
+-(void) stopTimer
+{
+    [_connectionTimer invalidate];
+    _connectionTimer = nil;
+}
+
 - (void) authenticationResult:(NSString *) jsonData
 {
+    isLoggedIn = true;
+    [self stopTimer];
     
     AuthResponse *authResponse = [AuthResponse convertFromJson:jsonData];
     
@@ -162,7 +173,6 @@ bool isConnected = false;
         self.authResponse = authResponse;
         [self.activityIndicator stopAnimating];
         [self performSegueWithIdentifier:@"clinicalSegue" sender:self];
-        
     }
     else
     {
@@ -200,7 +210,7 @@ bool isConnected = false;
     
     [_hub invoke:@"AuthenticatePatient" withArgs:@[request]];
     
-    _connectionTimer = nil;
+    [self stopTimer];
     
     _connectionTimer = [NSTimer scheduledTimerWithTimeInterval: [Router sharedRouter].methodTimeout
                                                         target: self
@@ -231,11 +241,13 @@ bool isConnected = false;
         
         [self.username setEnabled:false ];
         [self.password setEnabled:false ];
+        
+        [self.activityIndicator stopAnimating];
     }
 }
 
 -(void)onLoginTick:(NSTimer *)timer {
-    if(!isConnected)
+    if(!isLoggedIn)
     {
         NSString *message = @"Unable to login";
         
@@ -251,6 +263,8 @@ bool isConnected = false;
         
         [self.username setEnabled:false ];
         [self.password setEnabled:false ];
+        
+        [self.activityIndicator stopAnimating];
     }
 }
 @end

@@ -20,6 +20,7 @@
 @interface MessageDataController : NSObject
 
 @property (weak, nonatomic) id <MessageDataControllerDelegate> messageDataDelegate;
+@property (nonatomic, strong) NSString* urlStr;
 
 - (void)deletePatientMessage: (MessageData*)messageData;
 - (void)getPatientMessage: (MessageData*)messageData;

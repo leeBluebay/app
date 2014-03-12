@@ -7,10 +7,13 @@
 //
 
 #import "MessagesViewController.h"
+#import "AppResponse.h"
+#import "PatientMessage.h"
 
 @interface MessagesViewController ()
 @property (nonatomic, strong) NSIndexPath *rowIndex;
 @property (nonatomic) BOOL isError;
+
 @end
 
 @implementation MessagesViewController
@@ -43,7 +46,14 @@
     MessagesDataController * aDataController = [[MessagesDataController alloc] init];
     self.messagesDataController = aDataController;
     self.messagesDataController.messagesDataDelegate = self;
-    [self.messagesDataController getPatientMessages:self.messageData];
+    /**[self.messagesDataController getPatientMessages:self.messageData];**/
+    
+
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
+    
+    NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@', Data: { Top : 0, PatientId : '%@', NewOnly : false}}", self.authResponse.Ticket, self.authResponse.Patient.PatientId];
+    
+    [_hub invoke:@"getPatientMessages" withArgs:@[appRequest]];
     
     [self showToolbar];
 }
@@ -129,7 +139,6 @@
         MessageViewController *messageViewController = [segue destinationViewController];
         MessageData *messData = [self.messagesDataController messageAtIndex:self.rowIndex.row];
         messData.read = YES;
-        messData.url = self.messageData.url;
         messData.patID = self.messageData.patID;
         MessageData* messageData = [[MessageData alloc] initWithData:messData];
         messageViewController.messageData = messageData;
@@ -206,5 +215,71 @@
         [self.messagesDelegate messagesReturnHome:self withNew:[self.messagesDataController newMessageCount]];
 }
 
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if([appResponse.CallbackMethod  isEqual: @"GetPatientMessages"])
+    {
+        [self processMessagesResponse:appResponse];
+    }
+}
+
+- (void) processMessagesResponse:(AppResponse *) appResponse
+{
+    if(appResponse.IsError)
+    {
+        [self.messagesDataController addMessage:appResponse.Error];
+        [self.messagesDataController.messagesDataDelegate messagesDataControllerHadError];
+    }
+    else
+    {
+        NSData *nsData = [appResponse.JData dataUsingEncoding:NSUTF8StringEncoding];
+        
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:nsData options:0 error:nil];
+        
+        NSDictionary *messagesJson = [json valueForKey:@"Items"];
+        
+        NSMutableArray *messages = [PatientMessage convertFromJsonArray:messagesJson];
+        
+        if([messages count] == 0)
+        {
+            [self.messagesDataController addMessage:@"No messages found"];
+            [self.messagesDataController.messagesDataDelegate messagesDataControllerHadError];
+        }
+        else
+        {
+            for(PatientMessage *message in messages)
+            {
+                MessageData *messData = [self.messagesDataController addMessage:[NSString stringWithFormat:@"%d", (int)message.MessageId]];
+                
+                messData.practiceCode = message.PracticeCode;
+                messData.patID = [NSString stringWithFormat:@"%d", (int)message.PatientId];
+                messData.title = message.Title;
+                messData.from = message.From;
+                messData.read = message.Read;
+                
+                NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+                [dateFormatter setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_GB"]];
+                [dateFormatter setDateFormat:@"dd/MM/yyyy HH:mm:ss"];
+                NSString *sentStr = message.Sent;
+                NSDate *sentDate = [dateFormatter dateFromString:sentStr];
+                NSDate *todayDate = [self.messagesDataController normalisedDate];
+                
+                NSTimeInterval elapsed = [sentDate timeIntervalSinceDate:todayDate];
+                if (elapsed > 0)
+                    [dateFormatter setDateFormat:@"EEE dd MMM yyyy HH:mm"];
+                else
+                    [dateFormatter setDateFormat:@"EEE dd MMM yyyy"];
+                
+                messData.sent = [dateFormatter stringFromDate:sentDate];
+                
+            }
+            
+            [self.messagesDataController.messagesDataDelegate messagesDataControllerDidFinish];
+        }
+    }
+}
 
 @end

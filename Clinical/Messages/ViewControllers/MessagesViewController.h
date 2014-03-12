@@ -25,4 +25,8 @@
 
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
 
+@property (strong, nonatomic) AuthResponse *authResponse;
+@property (strong, nonatomic) SRHubConnection *connection;
+@property (strong, nonatomic) SRHubProxy *hub;
+
 @end

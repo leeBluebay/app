@@ -10,6 +10,8 @@
 #import "MessageData.h"
 #import "ClinicalConstants.h"
 #import "MessageDataController.h"
+#import "SignalR.h"
+#import "AuthResponse.h"
 
 @protocol MessageViewControllerDelegate
 - (void)messagesReturnHome:(UIViewController *)controller;
@@ -32,6 +34,11 @@
 
 @property (strong, nonatomic) IBOutlet UILabel *errorLabel;
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+
+@property (strong, nonatomic) AuthResponse *authResponse;
+@property (strong, nonatomic) SRHubConnection *connection;
+@property (strong, nonatomic) SRHubProxy *hub;
 
 - (IBAction)deleteMessage:(id)sender;
 

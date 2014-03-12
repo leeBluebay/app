@@ -12,6 +12,7 @@
 
 @synthesize messageDataDelegate = _messageDataDelegate;
 
+
 - (void)getPatientMessage: (MessageData*)messageData;
 {
     NSDictionary* requestData = [NSDictionary dictionaryWithObjectsAndKeys:

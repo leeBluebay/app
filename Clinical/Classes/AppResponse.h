@@ -14,7 +14,8 @@
 @property (strong, nonatomic) NSString *Ticket;
 @property (strong, nonatomic) NSString *CallbackMethod;
 @property (strong, nonatomic) NSString *CallerConnectionId;
-
+@property  bool IsError;
+@property (strong, nonatomic) NSString *Error;
 
 + (AppResponse*)convertFromJson:(NSString *) jsonData;
 

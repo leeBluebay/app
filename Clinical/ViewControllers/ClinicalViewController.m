@@ -88,12 +88,14 @@
         MessagesViewController *messagesViewController = [navController.viewControllers objectAtIndex:0];
         
         MessageData *messData = [[MessageData alloc] init];
-        /**
-        messData.url = self.loginData.url;
-        messData.practiceCode = self.loginData.practiceCode;
-        messData.patID = [self.loginData.patID stringValue];
+        
+        messData.practiceCode = self.authResponse.Patient.PracticeCode;
+        messData.patID = self.authResponse.Patient.PatientId;
         messagesViewController.messageData = messData;
-         **/
+        messagesViewController.authResponse = self.authResponse;
+        messagesViewController.connection = self.connection;
+        messagesViewController.hub = self.hub;
+        
         messagesViewController.messagesDelegate = self;
 
         [self presentModalViewController:navController animated:YES];

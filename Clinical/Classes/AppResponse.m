@@ -33,6 +33,12 @@
     if([json objectForKey:@"CallerConnectionId"] != nil)
         authResponse.CallerConnectionId =  [json valueForKey:@"CallerConnectionId"];
     
+    if([json objectForKey:@"IsError"] != nil)
+        authResponse.IsError =  [[json valueForKey:@"IsError"] boolValue];
+    
+    if([json objectForKey:@"Error"] != nil)
+        authResponse.Error =  [json valueForKey:@"Error"];
+    
     return authResponse;
 }
 @end

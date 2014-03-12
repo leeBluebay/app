@@ -10,7 +10,6 @@
 
 @implementation MessageData
 
-@synthesize url = _url;
 @synthesize practiceCode = _practiceCode;
 @synthesize patID = _patID;
 @synthesize messageID = _messageID;
@@ -23,7 +22,6 @@
 -(id)init
 {
     if (self = [super init]){
-        _url = @"";
         _practiceCode = @"";
         _patID = 0;
         _messageID = @"";
@@ -39,7 +37,6 @@
 -(MessageData*)initWithData:(MessageData *)messageData
 {
     if (self = [self init]) {
-        _url = messageData.url;
         _practiceCode = messageData.practiceCode;
         _patID = messageData.patID;
         _messageID = messageData.messageID;
