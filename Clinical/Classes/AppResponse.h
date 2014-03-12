@@ -19,4 +19,8 @@
 
 + (AppResponse*)convertFromJson:(NSString *) jsonData;
 
+//@property (strong, nonatomic) NSDictionary * jObject;
+
+- (NSDictionary*) jObject;
+
 @end

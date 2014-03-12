@@ -25,9 +25,6 @@
 -(void)removeMessageAtIndex:(NSInteger)index;
 -(NSUInteger)newMessageCount;
 - (MessageData*)addMessage:(NSString *)strMessage;
-/*
-- (void)getPatientMessages: (MessageData*)messageData;
-*/
 -(NSDate *) normalisedDate;
 
 @end

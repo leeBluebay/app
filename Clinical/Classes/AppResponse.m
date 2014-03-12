@@ -41,4 +41,18 @@
     
     return authResponse;
 }
+
+
+- (NSDictionary*) jObject
+{
+    if(self.JData == nil)
+    {
+        return nil;
+    }
+    
+    NSData *nsData = [self.JData dataUsingEncoding:NSUTF8StringEncoding];
+    
+    return [NSJSONSerialization JSONObjectWithData:nsData options:0 error:nil];
+}
+
 @end

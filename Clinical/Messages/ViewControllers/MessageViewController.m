@@ -7,6 +7,8 @@
 //
 
 #import "MessageViewController.h"
+#import "AppResponse.h"
+#import "PatientMessage.h"
 
 @interface MessageViewController ()
 
@@ -45,7 +47,12 @@
 
         self.messageDataController = [[MessageDataController alloc] init];
         self.messageDataController.messageDataDelegate = self;
-        [self.messageDataController getPatientMessage:self.messageData];
+        
+        [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
+        
+        NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@', Data: { PatientId : '%@', MessageId : '%@'}}", self.authResponse.Ticket, self.authResponse.Patient.PatientId, self.messageData.messageID];
+        
+        [_hub invoke:@"getPatientMessage" withArgs:@[appRequest]];
     }
     else {
         [self.activityIndicator setHidden:YES];
@@ -87,11 +94,54 @@
 
 #pragma mark - Delete Message
 
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if (appResponse.IsError)
+    {
+        [[self.messageDataController messageDataDelegate] messageDataControllerHadError:appResponse.Error];
+        return;
+    }
+    
+    if(appResponse.JData == nil)
+    {
+        [[self.messageDataController messageDataDelegate] messageDataControllerHadError:@"No response from surgery"];
+        return;
+    }
+    
+    if([appResponse.CallbackMethod  isEqual: @"GetPatientMessage"])
+    {
+        [self processGetPatientMessageResponse:appResponse];
+    }
+    
+    if([appResponse.CallbackMethod  isEqual: @"UpdatePatientMessage"])
+    {
+        [self processUpdatePatientMessageResponse:appResponse];
+    }
+}
+
+-(void)processUpdatePatientMessageResponse:(AppResponse*)appResponse
+{
+    [[self.messageDataController messageDataDelegate] messageDataControllerDidDelete];
+}
+
+-(void)processGetPatientMessageResponse:(AppResponse*)appResponse
+{
+    PatientMessage *message = [PatientMessage convertFromNsDictionary:appResponse.jObject];
+            
+    [[self.messageDataController messageDataDelegate] messageDataControllerDidFinish:message.Body];
+}
+
 - (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex
 {
     if ([[actionSheet buttonTitleAtIndex:buttonIndex] isEqualToString:@"Yes"]) {
         [self.activityIndicator startAnimating];
-        [self.messageDataController deletePatientMessage:self.messageData];
+        
+        NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@', Data: { PatientId : '%@', MessageId : '%@'}}", self.authResponse.Ticket, self.authResponse.Patient.PatientId, self.messageData.messageID];
+        
+        [_hub invoke:@"updatePatientMessage" withArgs:@[appRequest]];
     }
 }
 

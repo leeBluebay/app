@@ -137,6 +137,15 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"messageSegue"]) {
         MessageViewController *messageViewController = [segue destinationViewController];
+        
+        // clear down event handlers
+        [_hub on:@"getResponse" perform:self selector:nil];
+        
+        messageViewController.connection = _connection;
+        messageViewController.hub = _hub;
+        messageViewController.authResponse = _authResponse;
+        
+        
         MessageData *messData = [self.messagesDataController messageAtIndex:self.rowIndex.row];
         messData.read = YES;
         messData.patID = self.messageData.patID;
