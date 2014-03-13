@@ -7,17 +7,18 @@
 //
 
 #import "BookingsViewController.h"
+#import "SignalR.h"
+#import "Appointment.h"
 
 @interface BookingsViewController ()
 @property (nonatomic, strong) UIBarButtonItem *addButton;
-@property (nonatomic, strong) RequestDataAccess *requestDataAccess;
 @property (nonatomic, strong) PremisesDataController * premisesDataController;
-@property (nonatomic, strong) RequestData *requestData;
 @property (nonatomic, strong) NSIndexPath *rowIndex;
 @property (nonatomic) BOOL isError;
 @property (nonatomic) BOOL hasBookings;
 @property (nonatomic) BOOL isSearching;
 @property (nonatomic) NSInteger requestCount;
+@property (nonatomic, strong) NSMutableArray *patientBookings;
 @end
 
 @implementation BookingsViewController
@@ -31,8 +32,6 @@
 @synthesize rowIndex = _rowIndex;
 
 @synthesize addButton = _addButton;
-@synthesize requestData = _requestData;
-@synthesize requestDataAccess = _requestDataAccess;
 @synthesize premisesDataController = _premisesDataController;
 @synthesize isError = _isError;
 @synthesize hasBookings = _hasBookings;
@@ -53,26 +52,18 @@
     self.premisesDataController.premisesDataDelegate = self;
     self.premisesDataController.urlStr = self.urlStr;
     
-    if (self.bookingsDataController == nil) 
+    if (![self hasBookings])
     {
-        self.requestDataAccess = [[RequestDataAccess alloc] init];
-        self.requestDataAccess.requestDataDelegate = self;
-        self.requestDataAccess.urlStr = self.urlStr;
+        self.bookingsDataController = [[BookingsDataController alloc] init];
         
-        self.requestData = [[RequestData alloc] initWithPractice:self.appointmentData.practiceCode forPatient:self.appointmentData.patientID withRequest:@"3"];
-        
-        BookingsDataController * aDataController = [[BookingsDataController alloc] init];
-        self.bookingsDataController = aDataController;
-        [self.bookingsDataController addInfo:@"Searching for bookings..."];
-        
-        [self setSearching:YES hasBookings:NO isError:NO];
-        
-        [self setRequest];
+        [self getPatientBookings];
     }
     else {
         [self.premisesDataController getPremises:self.appointmentData];
         [self setSearching:NO hasBookings:self.hasBookings isError:self.isError];
     }
+    
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
 }
 
 - (void)viewDidUnload
@@ -80,8 +71,6 @@
     [super viewDidUnload];
 
     [self setPremisesDataController:nil];
-    [self setRequestDataAccess:nil];
-    [self setRequestData:nil];
     [self setRowIndex:nil];
     [self setToolbarItems:nil];
     [self setAddButton:nil];
@@ -122,7 +111,7 @@
         
         NSInteger bookingCount = [self.bookingsDataController bookingsCount];
         
-        if (bookingCount < [self.bookings integerValue]) {
+        if (bookingCount < _authResponse.Patient.NumberOfBookings) {
             self.navigationItem.rightBarButtonItem = self.addButton;
         }
         else {
@@ -146,15 +135,81 @@
     }
 }
 
+#pragma mark - Hub methods
+
+- (void) getPatientBookings
+{
+    [self.activityIndicator startAnimating];
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.rowHeight = 60;
+    self.navigationItem.rightBarButtonItem = nil;
+    self.tableView.allowsSelection = NO;
+    
+    NSString *request = [NSString stringWithFormat:@"{Ticket: '%@', Data: { PracticePatientId : %@}}", self.authResponse.Ticket, self.authResponse.Patient.PracticePatientId];
+    
+    [_hub invoke:@"GetClinicalBookings" withArgs:@[request]];
+}
+
+- (BOOL) hasBookings
+{
+    return !(_patientBookings == nil || [_patientBookings count] == 0);
+}
+
+#pragma mark - signalR responses
+
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if([appResponse.CallbackMethod  isEqual: @"GetClinicalBookings"])
+    {
+        [self processBookingsResponse:appResponse];
+    }
+}
+
+
+- (void) processBookingsResponse:(AppResponse *) appResponse
+{
+    _patientBookings = [Appointment convertFromJsonList:appResponse.JData];
+    
+    [self.activityIndicator stopAnimating];
+    
+    NSUInteger bookingCount = [_patientBookings count];
+    
+    if (bookingCount < _authResponse.Patient.NumberOfBookings) {
+        self.navigationItem.rightBarButtonItem = self.addButton;
+    }
+    else {
+        self.navigationItem.rightBarButtonItem = nil;
+    }
+    
+    if (bookingCount > 0)
+    {
+        self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
+        self.tableView.rowHeight = 120;
+        self.tableView.allowsSelection = YES;
+    }
+    else {
+        self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+        self.tableView.rowHeight = 60;
+        self.tableView.allowsSelection = NO;
+    }
+    [self.tableView reloadData];
+}
+
+
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-    if (self.hasBookings) {
-        return [self.bookingsDataController bookingsCount];
-    }
-    else {
+    if(_patientBookings == nil || [_patientBookings count] == 0)
+    {
         return [self.bookingsDataController infoCount];
+    }
+    else
+    {
+        return [_patientBookings count];
     }
 }
 
@@ -162,17 +217,18 @@
 {
     return 1;
 }
-
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    AppointmentData *appData;
-    if (self.hasBookings) {
-        appData = [self.bookingsDataController bookingAtIndex:indexPath.section];
+    Appointment *appData;
+    
+    
+    if ([self hasBookings]) {
+        appData = [_patientBookings objectAtIndex:indexPath.section];
     }
     else {
-        appData = [self.bookingsDataController infoAtIndex:indexPath.section];
+        //appData = [self.bookingsDataController infoAtIndex:indexPath.section];
     }
-
+    
     static NSString *cellIdentifier;
     if (self.isError) {
         cellIdentifier = @"errorCell";
@@ -189,35 +245,36 @@
     if (self.isError)
     {
         UILabel *errorLabel = (UILabel *)[cell viewWithTag:100];
-        errorLabel.text = appData.staff;
+        errorLabel.text = appData.StaffId;
     }
-    else if (self.isSearching) {
+    else if (self.isSearching)
+    {
         UILabel *searchLabel = (UILabel *)[cell viewWithTag:100];
-        searchLabel.text = appData.staff;
+        searchLabel.text = appData.StaffId;
     }
     else if (!self.hasBookings) {
         UILabel *addLabel = (UILabel *)[cell viewWithTag:100];
-        addLabel.text = appData.staff;
+        addLabel.text = appData.StaffId;
     }
     else {
         UILabel *slotLabel = (UILabel *)[cell viewWithTag:100];
         NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
         [dateFormatter setTimeStyle:NSDateFormatterNoStyle];
         [dateFormatter setDateFormat:@"dd/MM/yyyy"];
-        NSDate *slotDate = [dateFormatter dateFromString:appData.appointmentDate];
+        NSDate *slotDate = [dateFormatter dateFromString:appData.EventDate];
         [dateFormatter setDateFormat:@"EEE dd MMM yyyy"];
         NSString *strDate = [dateFormatter stringFromDate:slotDate];
-        NSString *strSlot = [[NSString alloc] initWithFormat:@"%@ %@", strDate, appData.slot];
+        NSString *strSlot = [[NSString alloc] initWithFormat:@"%@ %@", strDate, appData.EventTime];
         slotLabel.text = strSlot;
         
         UILabel *staffLabel = (UILabel *)[cell viewWithTag:101];
-        staffLabel.text = appData.staff;
-
+        staffLabel.text = appData.StaffId;
+        
         UILabel *sessionLabel = (UILabel *)[cell viewWithTag:102];
-        sessionLabel.text = appData.session;
+        sessionLabel.text = appData.Session;
     }
     
-    return cell;    
+    return cell;
 }
 
 -(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -226,7 +283,6 @@
     
     [self performSegueWithIdentifier:@"bookingSegue" sender:self];
 }
-
 - (void)add:(id)sender {
     BOOL showPremises = YES;
     if ([self.premisesDataController.premisesArray count] == 1) {
@@ -266,6 +322,7 @@
         searchTypeViewController.searchTypeDelegate = self;
     }
     else if ([[segue identifier] isEqualToString:@"bookingSegue"]) {
+        /**
         BookingViewController *bookingViewController = [segue destinationViewController];
         AppointmentData *appData = [self.bookingsDataController bookingAtIndex:self.rowIndex.section];
         AppointmentData* appointmentData = [[AppointmentData alloc] initWithData:appData];
@@ -273,6 +330,14 @@
         appointmentData.patientID = self.appointmentData.patientID;
         bookingViewController.appointmentData = appointmentData;
         bookingViewController.urlStr = self.urlStr;
+        bookingViewController.bookingDelegate = self;
+        **/
+        BookingViewController *bookingViewController = [segue destinationViewController];
+        Appointment *appointment = [_patientBookings objectAtIndex:self.rowIndex.section];
+        bookingViewController.connection = _connection;
+        bookingViewController.hub = _hub;
+        bookingViewController.authResponse = _authResponse;
+        bookingViewController.appointment = appointment;
         bookingViewController.bookingDelegate = self;
     }
 }
@@ -299,14 +364,14 @@
 
 - (void)cancelBookingViewControllerDidFinish:(CancelBookingViewController *)controller;
 {
-    [self.requestDataAccess delRequest:self.requestData];
-    
-    if (self.bookingsDataController != nil)
+    if (_patientBookings != nil)
     {
-        [self.bookingsDataController removeBookingAtIndex:self.rowIndex.section];
+        Appointment *appointmentToDelete  = [_patientBookings objectAtIndex:self.rowIndex.section];
         
-        if ([self.bookingsDataController bookingsCount] > 0) 
+        
+        if ([_patientBookings count] > 0)
         {
+            [_patientBookings removeObject:appointmentToDelete];
             [self setSearching:NO hasBookings:YES isError:NO];
         }
         else {
@@ -315,16 +380,6 @@
     }
     [self.navigationController popToViewController:self animated:YES];
 }
-
-#pragma mark - request data
-
--(void) setRequest {
-    [self.requestDataAccess setRequest:self.requestData];
-}
-
-- (void)getRequest {
-    [self.requestDataAccess getRequest:self.requestData];
-}    
 
 #pragma mark - request data delegate
 
@@ -395,14 +450,14 @@
 {
     self.navigationItem.rightBarButtonItem.enabled = YES;
     
-    [self.requestDataAccess delRequest:self.requestData];
+    //[self.requestDataAccess delRequest:self.requestData];
 }
 
 - (void)premisesDataControllerIsEmpty
 {
     self.navigationItem.rightBarButtonItem.enabled = NO;
     
-    [self.requestDataAccess delRequest:self.requestData];
+    //[self.requestDataAccess delRequest:self.requestData];
 }
 
 - (void)premisesDataControllerHadError:(NSString *)strError

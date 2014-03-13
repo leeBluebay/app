@@ -7,6 +7,7 @@
 //
 
 #import "CancelBookingViewController.h"
+#import "AppRequest.h"
 
 @interface CancelBookingViewController ()
 @property (nonatomic, strong) RequestDataAccess *requestDataAccess;
@@ -17,7 +18,6 @@
 @implementation CancelBookingViewController
 
 @synthesize cancelBookingDelegate = _cancelBookingDelegate;
-@synthesize appointmentData = _appointmentData;
 @synthesize cancelLabel = _cancelLabel;
 @synthesize errorLabel = _errorLabel;
 @synthesize activityIndicator = _activityIndicator;
@@ -25,7 +25,7 @@
 @synthesize requestDataAccess = _requestDataAccess;
 @synthesize requestData = _requestData;
 @synthesize requestCount = _requestCount;
-@synthesize urlStr = _urlStr;
+
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -49,11 +49,17 @@
 
     self.requestDataAccess = [[RequestDataAccess alloc] init];
     self.requestDataAccess.requestDataDelegate = self;
-
-    self.requestData = [[RequestData alloc] initWithPractice:self.appointmentData.practiceCode forPatient:self.appointmentData.patientID withRequest:@"4"];
-    self.requestDataAccess.urlStr = self.urlStr;
-    self.requestData.eventData = [self.requestDataAccess getAppointmentEventData:self.appointmentData];
-    [self.requestDataAccess setRequest:self.requestData];
+    
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
+    
+    self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
+    self.appointment.Location = @"";
+    
+    NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@' , Data : %@}", self.authResponse.Ticket, [self.appointment toJsonString]];
+    
+        
+    [_hub invoke:@"cancelClinicalAppointment" withArgs:@[appRequest]];
+  
 }
 
 - (void)viewDidUnload
@@ -71,10 +77,6 @@
     return YES;
 }
 
-- (void)getRequest {
-    [self.requestDataAccess getRequest:self.requestData];
-}
-
 -(void) showError:(NSString*)strError {
     self.errorLabel.text = strError;
     self.cancelLabel.hidden = YES;
@@ -88,13 +90,6 @@
 
 #pragma mark - request data delegate
 
--(void)didSetRequest {
-    [self performSelector:@selector(getRequest) withObject:nil afterDelay:2];    
-}
-
--(void)setRequestError:(NSString *)strError {
-    [self performSelector:@selector(showError:) withObject:strError afterDelay:1];
-}
 
 -(void)didGetRequest:(NSData *)responseData {
     NSError* error;
@@ -148,6 +143,38 @@
 - (void)returnHome
 {
     [self.cancelBookingDelegate bookingsReturnHome:self];
+}
+
+#pragma mark - signalR responses
+
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if([appResponse.CallbackMethod  isEqual: @"CancelClinicalAppointment"])
+    {
+        [self processCancelresponse:appResponse];
+    }
+}
+
+-(void) processCancelresponse:(AppResponse *) appResponse
+{
+    
+    if(appResponse.IsError)
+    {
+        [self showError:appResponse.Error];
+    }
+    else
+    {
+        self.cancelLabel.text = @"Your booking has been cancelled";
+        self.errorLabel.hidden = YES;
+        [self.activityIndicator stopAnimating];
+        self.navigationItem.rightBarButtonItem = self.doneButton;
+        
+        
+    }
+
 }
 
 @end

@@ -55,5 +55,59 @@
     return appointments;
 }
 
+- (NSString*) toJsonString;
+
+{
+    NSMutableDictionary *appJson = [[NSMutableDictionary alloc]init];
+   
+    if(!IsEmpty(self.PracticePatientId ))
+    {
+        [appJson setObject:self.PracticePatientId  forKey: @"PracticePatientId"];
+    }
+    
+    if(!IsEmpty(self.PracticeCode ))
+    {
+         [appJson setObject:self.PracticeCode  forKey: @"PracticeCode"];
+    }
+    
+    if(!IsEmpty(self.EventDate ))
+    {
+        [appJson setObject:self.EventDate  forKey: @"EventDate"];
+    }
+    
+    if(!IsEmpty(self.EventTime ))
+    {
+        [appJson setObject:self.EventTime  forKey: @"EventTime"];
+    }
+    
+    if(!IsEmpty(self.StaffId ))
+    {
+        [appJson setObject:self.StaffId  forKey: @"StaffId"];
+    }
+    
+    if(!IsEmpty(self.Session ))
+    {
+        [appJson setObject:self.Session  forKey: @"Session"];
+    }
+    
+    if(!IsEmpty(self.Location ))
+    {
+        [appJson setObject:self.Location  forKey: @"Location"];
+    }
+    
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:appJson
+                                                       options:0
+                                                         error:&error];
+    
+    NSString *json;
+    
+    if (jsonData)
+    {
+        json = [[NSString alloc] initWithBytes:[jsonData bytes] length:[jsonData length] encoding:NSUTF8StringEncoding];;
+    }
+    
+    return json;
+}
 
 @end

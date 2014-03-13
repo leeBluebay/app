@@ -11,7 +11,10 @@
 #import <EventKitUI/EventKitUI.h>
 #import "CancelBookingViewController.h"
 #import "ClinicalConstants.h"
-
+#import "Appointment.h"
+#import "SignalR.h"
+#import "AppResponse.h"
+#import "AuthResponse.h"
 @class BookingViewController;
 
 @protocol BookingViewControllerDelegate <NSObject>
@@ -23,9 +26,7 @@
 
 @property (weak, nonatomic) id <BookingViewControllerDelegate> bookingDelegate;
 
-@property (strong, nonatomic) NSString* urlStr;
-
-@property (strong, nonatomic) AppointmentData* appointmentData;
+@property (strong, nonatomic) Appointment* appointment;
 
 @property (strong, nonatomic) IBOutlet UILabel *dateLabel;
 @property (strong, nonatomic) IBOutlet UILabel *staffLabel;
@@ -33,6 +34,12 @@
 @property (strong, nonatomic) IBOutlet UIButton *cancelBookingButton;
 @property (strong, nonatomic) IBOutlet UIButton *calendarButton;
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+@property (strong, nonatomic) AppResponse *appResponse;
+@property (strong, nonatomic) AuthResponse *authResponse;
+@property (strong, nonatomic) SRHubConnection *connection;
+@property (strong, nonatomic) SRHubProxy *hub;
+
 
 - (IBAction)calendar:(id)sender;
 - (IBAction)cancelBooking:(id)sender;

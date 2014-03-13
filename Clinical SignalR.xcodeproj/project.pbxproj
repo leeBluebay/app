@@ -131,6 +131,8 @@
 		290AB58918CE0014004C5E17 /* Patient.m in Sources */ = {isa = PBXBuildFile; fileRef = 290AB58118CE0014004C5E17 /* Patient.m */; };
 		290AB58A18CE0014004C5E17 /* PatientMessage.m in Sources */ = {isa = PBXBuildFile; fileRef = 290AB58318CE0014004C5E17 /* PatientMessage.m */; };
 		290AB58B18CE0014004C5E17 /* Router.m in Sources */ = {isa = PBXBuildFile; fileRef = 290AB58518CE0014004C5E17 /* Router.m */; };
+		29CBFCCE18D0C9BE00A6C495 /* AppRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 29CBFCCD18D0C9BE00A6C495 /* AppRequest.m */; };
+		29CBFCD218D1BA6B00A6C495 /* ObjectHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 29CBFCD118D1BA6B00A6C495 /* ObjectHelper.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -371,6 +373,10 @@
 		290AB58318CE0014004C5E17 /* PatientMessage.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PatientMessage.m; sourceTree = "<group>"; };
 		290AB58418CE0014004C5E17 /* Router.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Router.h; sourceTree = "<group>"; };
 		290AB58518CE0014004C5E17 /* Router.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Router.m; sourceTree = "<group>"; };
+		29CBFCCC18D0C9BD00A6C495 /* AppRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppRequest.h; sourceTree = "<group>"; };
+		29CBFCCD18D0C9BE00A6C495 /* AppRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppRequest.m; sourceTree = "<group>"; };
+		29CBFCD018D1BA6B00A6C495 /* ObjectHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ObjectHelper.h; sourceTree = "<group>"; };
+		29CBFCD118D1BA6B00A6C495 /* ObjectHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ObjectHelper.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -584,6 +590,7 @@
 		24B5A44115AAD4F4009E037D /* Clinical */ = {
 			isa = PBXGroup;
 			children = (
+				29CBFCCF18D1BA4600A6C495 /* Extension */,
 				24EAD76A165FB82800F3F8FA /* Messages */,
 				24B5A48415AAE95B009E037D /* Appointments */,
 				24B5A45C15AAD6DE009E037D /* DTO */,
@@ -637,6 +644,8 @@
 			children = (
 				290AB57A18CE0014004C5E17 /* Appointment.h */,
 				290AB57B18CE0014004C5E17 /* Appointment.m */,
+				29CBFCCC18D0C9BD00A6C495 /* AppRequest.h */,
+				29CBFCCD18D0C9BE00A6C495 /* AppRequest.m */,
 				290AB57C18CE0014004C5E17 /* AppResponse.h */,
 				290AB57D18CE0014004C5E17 /* AppResponse.m */,
 				290AB57E18CE0014004C5E17 /* AuthResponse.h */,
@@ -961,6 +970,15 @@
 			path = Images;
 			sourceTree = "<group>";
 		};
+		29CBFCCF18D1BA4600A6C495 /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				29CBFCD018D1BA6B00A6C495 /* ObjectHelper.h */,
+				29CBFCD118D1BA6B00A6C495 /* ObjectHelper.m */,
+			);
+			name = Extension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1078,6 +1096,7 @@
 				2903E8AF18CA1D2A0037923B /* SRServerSentEventsTransport.m in Sources */,
 				2903E89F18CA1D2A0037923B /* SRHubservable.m in Sources */,
 				24B5A4AD15AAE95B009E037D /* SearchTypeViewController.m in Sources */,
+				29CBFCD218D1BA6B00A6C495 /* ObjectHelper.m in Sources */,
 				24B5A4AE15AAE95B009E037D /* SessionFreeViewController.m in Sources */,
 				24B5A4AF15AAE95B009E037D /* SlotsFreeViewController.m in Sources */,
 				24B5A4B015AAE95B009E037D /* StaffFreeViewController.m in Sources */,
@@ -1111,6 +1130,7 @@
 				290AB58818CE0014004C5E17 /* AuthResponse.m in Sources */,
 				2495750C15B6FB75000B6CD1 /* RepeatsDataController.m in Sources */,
 				2495750D15B6FB75000B6CD1 /* SendRequestDataController.m in Sources */,
+				29CBFCCE18D0C9BE00A6C495 /* AppRequest.m in Sources */,
 				2903E8A418CA1D2A0037923B /* SRVersion.m in Sources */,
 				2903E89818CA1D2A0037923B /* SRDefaultHttpWebResponseWrapper.m in Sources */,
 				2495751015B6FBAA000B6CD1 /* ConfirmRequestDataController.m in Sources */,

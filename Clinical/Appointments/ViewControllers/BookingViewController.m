@@ -14,9 +14,7 @@
 
 @implementation BookingViewController
 
-@synthesize urlStr = _urlStr;
 @synthesize bookingDelegate = _bookingDelegate;
-@synthesize appointmentData = _appointmentData;
 @synthesize dateLabel = _dateLabel;
 @synthesize staffLabel = _staffLabel;
 @synthesize sessionLabel = _sessionLabel;
@@ -60,14 +58,14 @@
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setTimeStyle:NSDateFormatterNoStyle];
     [dateFormatter setDateFormat:@"dd/MM/yyyy"];
-    NSDate *slotDate = [dateFormatter dateFromString:self.appointmentData.appointmentDate];
+    NSDate *slotDate = [dateFormatter dateFromString:self.appointment.EventDate];
     [dateFormatter setDateFormat:@"EEE dd MMM yyyy"];
     NSString *strDate = [dateFormatter stringFromDate:slotDate];
-    NSString *strSlot = [NSString stringWithFormat:@"%@ %@", strDate, self.appointmentData.slot];
+    NSString *strSlot = [NSString stringWithFormat:@"%@ %@", strDate, self.appointment.EventTime];
 
     self.dateLabel.text = strSlot;
-    self.staffLabel.text = self.appointmentData.staff;
-    self.sessionLabel.text = self.appointmentData.session;
+    self.staffLabel.text = self.appointment.StaffId;
+    self.sessionLabel.text = self.appointment.Session;
     
     self.cancelBookingButton.hidden = ([[NSDate date] timeIntervalSinceDate:slotDate] > 0);
 }
@@ -92,16 +90,19 @@
 }
 
 - (IBAction)cancelBooking:(id)sender {
-    AppointmentData *appData = self.appointmentData;
     
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setTimeStyle:NSDateFormatterNoStyle];
     [dateFormatter setDateFormat:@"dd/MM/yyyy"];
-    NSDate *slotDate = [dateFormatter dateFromString:appData.appointmentDate];
+    NSDate *slotDate = [dateFormatter dateFromString:self.appointment.EventDate];
     [dateFormatter setDateFormat:@"EEE dd MMM yyyy"];
     NSString *strDate = [dateFormatter stringFromDate:slotDate];
     
-    NSString *strConfirm = [[NSString alloc] initWithFormat:@"Cancel %@ booking with %@ on %@ at %@", appData.session, appData.staff, strDate, appData.slot];
+    NSString *strConfirm = [[NSString alloc] initWithFormat:@"Cancel %@ booking with %@ on %@ at %@",
+                            self.appointment.Session,
+                            self.appointment.StaffId,
+                            strDate,
+                            self.appointment.EventTime];
     
     UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:strConfirm delegate:self cancelButtonTitle:@"No" 
                                          destructiveButtonTitle:@"Yes" otherButtonTitles:nil, nil];
@@ -121,10 +122,12 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"cancelBookingSegue"]) {
         CancelBookingViewController *cancelBookingViewController = [segue destinationViewController];
-        AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
-        cancelBookingViewController.urlStr = self.urlStr;
-        cancelBookingViewController.appointmentData = appData;
+        cancelBookingViewController.appointment = self.appointment;
         cancelBookingViewController.cancelBookingDelegate = self;
+        cancelBookingViewController.connection = _connection;
+        cancelBookingViewController.hub = _hub;
+        cancelBookingViewController.authResponse = _authResponse;
+        
     }
 }
 
@@ -143,13 +146,12 @@
 
 -(void) addCalendarEvent
 {
-    AppointmentData *appData = self.appointmentData;
-    
+   
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setLocale:[[NSLocale alloc] initWithLocaleIdentifier:@"en_GB"]];
     [dateFormatter setTimeStyle:NSDateFormatterNoStyle];
     [dateFormatter setDateFormat:@"dd/MM/yyyy HH:mm"];
-    NSString *strStartDate = [NSString stringWithFormat:@"%@ %@", appData.appointmentDate, appData.slot];
+    NSString *strStartDate = [NSString stringWithFormat:@"%@ %@", self.appointment.EventDate, self.appointment.EventTime];
     NSDate *startDate = [dateFormatter dateFromString:strStartDate];
     
     NSCalendar *calendar = [NSCalendar currentCalendar];
@@ -171,7 +173,7 @@
         event = [EKEvent eventWithEventStore:self.eventStore];
         event.startDate = startDate;
         event.endDate = startDate;
-        event.title = [NSString stringWithFormat:@"%@ - %@", appData.staff, appData.session];
+        event.title = [NSString stringWithFormat:@"%@ - %@", self.appointment.StaffId, self.appointment.Session];
     }
     
     EKEventEditViewController *addController = [[EKEventEditViewController alloc] init];

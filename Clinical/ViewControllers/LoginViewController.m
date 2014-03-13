@@ -127,6 +127,9 @@ bool isLoggedIn = false;
 #pragma mark - Bookings view delegate
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+
+    if(!isLoggedIn) return;
+    
     if ([[segue identifier] isEqualToString:@"clinicalSegue"]) {
         ClinicalViewController *clinicalViewController = [segue destinationViewController];
         clinicalViewController.connection = _connection;

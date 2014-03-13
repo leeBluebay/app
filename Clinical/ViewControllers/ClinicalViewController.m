@@ -108,11 +108,11 @@
         BookingsViewController *bookingsViewController = [navController.viewControllers objectAtIndex:0];
         
         AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
-         /**
-        bookingsViewController.urlStr = self.loginData.url;
+        bookingsViewController.hub = self.hub;
+        bookingsViewController.connection = self.connection;
+        bookingsViewController.authResponse = self.authResponse;
         bookingsViewController.appointmentData = appData;
-        bookingsViewController.bookings = self.loginData.bookings;
-          **/
+        bookingsViewController.bookings = self.authResponse.Patient.NumberOfBookings;
         bookingsViewController.bookingsDelegate = self;
         
         [self presentModalViewController:navController animated:YES];

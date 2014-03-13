@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-
+#import "ObjectHelper.h"
 @interface Appointment : NSObject
 
 @property (nonatomic, copy) NSString* PracticePatientId;
@@ -20,5 +20,7 @@
 
 + (Appointment*) convertFromNsDictionary:(NSDictionary *) appointmentDictionary;
 + (NSMutableArray*) convertFromJsonList:(NSString *) jsonData;
+
+- (NSString*) toJsonString;
 
 @end
