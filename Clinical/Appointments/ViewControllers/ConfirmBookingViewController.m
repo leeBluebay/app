@@ -9,21 +9,16 @@
 #import "ConfirmBookingViewController.h"
 
 @interface ConfirmBookingViewController ()
-@property (nonatomic, strong) RequestDataAccess *requestDataAccess;
-@property (nonatomic, strong) RequestData *requestData;
 @property (nonatomic) NSInteger requestCount;
 @end
 
 @implementation ConfirmBookingViewController
 
 @synthesize confirmBookingDelegate = _confirmBookingDelegate;
-@synthesize appointmentData = _appointmentData;
 @synthesize confirmLabel = _confirmLabel;
 @synthesize errorLabel = _errorLabel;
 @synthesize doneButton = _doneButton;
 @synthesize activityIndicator = _activityIndicator;
-@synthesize requestDataAccess = _requestDataAccess;
-@synthesize requestData = _requestData;
 @synthesize requestCount = _requestCount;
 @synthesize urlStr = _urlStr;
 
@@ -46,13 +41,13 @@
     [self.errorLabel setText:@""];
     [self showToolbar];
     
-    self.requestDataAccess = [[RequestDataAccess alloc] init];
-    self.requestDataAccess.requestDataDelegate = self;
-    self.requestDataAccess.urlStr = self.urlStr;
-
-    self.requestData = [[RequestData alloc] initWithPractice:self.appointmentData.practiceCode forPatient:self.appointmentData.patientID withRequest:@"2"];
-    self.requestData.eventData = [self.requestDataAccess getAppointmentEventData:self.appointmentData];
-    [self.requestDataAccess setRequest:self.requestData];
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
+    
+    self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
+    
+    NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@' , Data : %@}", self.authResponse.Ticket, [self.appointment toJsonString]];
+    
+    [_hub invoke:@"bookClinicalAppointment" withArgs:@[appRequest]];
 }
 
 - (void)viewDidUnload
@@ -62,7 +57,6 @@
     [self setConfirmLabel:nil];
     [self setErrorLabel:nil];
     [super viewDidUnload];
-    // Release any retained subviews of the main view.
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -74,10 +68,6 @@
     [self.confirmBookingDelegate confirmBookingViewControllerDidFinish:self];
 }
 
-- (void)getRequest {
-    [self.requestDataAccess getRequest:self.requestData];
-}
-
 -(void) showError:(NSString*)strError {
     self.errorLabel.text = strError;
     self.confirmLabel.hidden = YES;
@@ -85,46 +75,11 @@
     [self.navigationItem setHidesBackButton:NO];
 }
 
-#pragma mark - request data delegate
-
--(void)didSetRequest {
-    self.requestCount = 1;
-    [self performSelector:@selector(getRequest) withObject:nil afterDelay:1];    
-}
-
--(void)setRequestError:(NSString *)strError {
-    [self performSelector:@selector(showError:) withObject:strError afterDelay:1];
-}
-
--(void)didGetRequest:(NSData *)responseData {
-    NSError* error;
-    NSDictionary* requestData = [NSJSONSerialization JSONObjectWithData:responseData options:kNilOptions error:&error];
-    
-    NSString* strEventData = [requestData objectForKey:@"EventData"];
-    
-    if ([strEventData isEqualToString:@"false"]) {
-        if (self.requestCount < 20) {
-            self.requestCount++;
-            [self performSelector:@selector(getRequest) withObject:nil afterDelay:1];    
-        }
-        else {
-            [self showError:@"The request has timed out"];
-        }
-    }
-    else {
-        self.confirmLabel.text = @"Your booking has been confirmed";
-        [self.activityIndicator stopAnimating];
-        self.navigationItem.rightBarButtonItem = self.doneButton;
-    }
-}
-
--(void)getRequestError:(NSString *)strError {
-    [self showError:strError];
-}
 
 #pragma mark - show toolbar
 
-- (void) showToolbar {
+- (void) showToolbar
+{
     UIImage *buttonImage = [UIImage imageNamed:kHomeImage];
     
     UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -142,6 +97,32 @@
 - (void)returnHome
 {
     [self.confirmBookingDelegate bookingsReturnHome:self];
+}
+
+#pragma mark - signalR responses
+
+- (void) getResponse:(NSString *) jsonData
+{
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if([appResponse.CallbackMethod  isEqual: @"BookClinicalAppointment"])
+    {
+        [self processConfirmResponse:appResponse];
+    }
+}
+
+-(void) processConfirmResponse:(AppResponse *) appResponse
+{
+    if(appResponse.IsError)
+    {
+        [self showError:appResponse.Error];
+    }
+    else
+    {
+        self.confirmLabel.text = @"Your booking has been confirmed";
+        [self.activityIndicator stopAnimating];
+        self.navigationItem.rightBarButtonItem = self.doneButton;
+    }
 }
 
 @end

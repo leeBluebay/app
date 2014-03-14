@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AppointmentData.h"
+#import "Appointment.h"
 #import "ClinicalConstants.h"
 
 @class PremisesDataController;
@@ -27,6 +27,6 @@
 
 - (id)initWithArray:(NSArray*)premisesArray;
 - (void)addPremise:(NSString *)strPremise;
-- (void)getPremises:(AppointmentData*)appointmentData;
+- (void)getPremises:(Appointment*)appointment;
 
 @end

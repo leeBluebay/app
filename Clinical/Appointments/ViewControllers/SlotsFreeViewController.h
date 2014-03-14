@@ -8,26 +8,29 @@
 #import "RequestDataAccess.h"
 #import "ConfirmBookingViewController.h"
 #import "ClinicalConstants.h"
+#import "Appointment.h"
 
-//@class SlotsFreeViewController;
 @class SlotsFreeDataController;
-//@class BookingsDataController;
 
 @protocol SlotsFreeViewControllerDelegate <NSObject>
-- (void)slotsFreeViewControllerDidFinish:(UIViewController *)controller slot:(AppointmentData*)appData;
+- (void)slotsFreeViewControllerDidFinish:(UIViewController *)controller slot:(Appointment*)appData;
 - (void)bookingsReturnHome:(UIViewController *)controller;
 @end
 
-@interface SlotsFreeViewController : UITableViewController <UIActionSheetDelegate, UIAlertViewDelegate, RequestDataDelegate, ConfirmBookingViewControllerDelegate>
+@interface SlotsFreeViewController : UITableViewController <UIActionSheetDelegate, UIAlertViewDelegate, ConfirmBookingViewControllerDelegate>
 
-@property (strong, nonatomic) NSString* urlStr;
-
-@property (strong, nonatomic) AppointmentData* appointmentData;
+@property (strong, nonatomic) Appointment* appointment;
 
 @property (weak, nonatomic) id <SlotsFreeViewControllerDelegate> slotsFreeDelegate;
 
 @property (strong, nonatomic) SlotsFreeDataController * slotsFreeDataController;
 
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+
+@property (strong, nonatomic) AppResponse *appResponse;
+@property (strong, nonatomic) AuthResponse *authResponse;
+@property (strong, nonatomic) SRHubConnection *connection;
+@property (strong, nonatomic) SRHubProxy *hub;
 
 @end

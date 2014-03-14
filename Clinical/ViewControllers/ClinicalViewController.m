@@ -13,7 +13,6 @@
 
 @implementation ClinicalViewController
 
-@synthesize appointmentData = _appointmentData;
 @synthesize repeatData = _repeatData;
 @synthesize clinicalDataController = _clinicalDataController;
 
@@ -34,9 +33,11 @@
     
     self.clinicalDataController = [[ClinicalDataController alloc] initWithData:self.authResponse];
     
-    self.appointmentData = [[AppointmentData alloc] initWithPractice:self.authResponse.Patient.PracticeCode
-                                                          forPatient:self.authResponse.Patient.PracticePatientId
-                                                           atPremise:self.authResponse.Patient.DefaultLocation];
+    self.appointment = [[Appointment alloc] init];
+    self.appointment.PracticeCode = self.authResponse.Patient.PracticeCode;
+    self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
+    self.appointment.Location = self.authResponse.Patient.DefaultLocation;
+    
     
     self.repeatData = [[RepeatData alloc] initWithPractice:self.authResponse.Patient.PracticeCode
                                                 forPatient:self.authResponse.Patient.PracticePatientId];
@@ -106,12 +107,10 @@
         [navController setModalTransitionStyle:UIModalTransitionStyleCoverVertical];
         
         BookingsViewController *bookingsViewController = [navController.viewControllers objectAtIndex:0];
-        
-        AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
         bookingsViewController.hub = self.hub;
         bookingsViewController.connection = self.connection;
         bookingsViewController.authResponse = self.authResponse;
-        bookingsViewController.appointmentData = appData;
+        bookingsViewController.appointment = self.appointment;
         bookingsViewController.bookings = self.authResponse.Patient.NumberOfBookings;
         bookingsViewController.bookingsDelegate = self;
         
@@ -156,7 +155,7 @@
 
 -(void) bookingsReturnHome:(UIViewController *)controller {
     BookingsViewController *bookingsViewController = (BookingsViewController*)controller;
-    self.appointmentData.premise = bookingsViewController.appointmentData.premise;
+    self.appointment.Location = bookingsViewController.appointment.Location;
     [self dismissModalViewControllerAnimated:YES];
 }
 

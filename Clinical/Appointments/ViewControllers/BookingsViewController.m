@@ -27,7 +27,6 @@
 @synthesize bookingsDelegate = _bookingsDelegate;
 @synthesize bookings = _bookings;
 @synthesize bookingsDataController = _bookingsDataController;
-@synthesize appointmentData = _appointmentData;
 @synthesize activityIndicator = _activityIndicator;
 @synthesize rowIndex = _rowIndex;
 
@@ -59,7 +58,7 @@
         [self getPatientBookings];
     }
     else {
-        [self.premisesDataController getPremises:self.appointmentData];
+        [self.premisesDataController getPremises:self.appointment];
         [self setSearching:NO hasBookings:self.hasBookings isError:self.isError];
     }
     
@@ -288,7 +287,7 @@
     if ([self.premisesDataController.premisesArray count] == 1) {
         NSString *strPremise = [self.premisesDataController.premisesArray objectAtIndex:0];
         if ([strPremise isEqualToString:@"Unspecified"]) {
-            self.appointmentData.premise = strPremise;
+            self.appointment.Location = strPremise;
             showPremises = NO;
         }
     }
@@ -305,21 +304,25 @@
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"premisesSegue"]) {
-        AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
         PremisesViewController * premisesViewController = [segue destinationViewController];
         
         premisesViewController.urlStr = self.urlStr;
-        premisesViewController.appointmentData = appData;
+        premisesViewController.appointment = self.appointment;
         premisesViewController.premisesDelegate = self;
+        
+        premisesViewController.hub = self.hub;
+        premisesViewController.authResponse = self.authResponse;
+        premisesViewController.connection = self.connection;
         
         premisesViewController.premisesDataController = [[PremisesDataController alloc] initWithArray:self.premisesDataController.premisesArray];
     }
     else if ([[segue identifier] isEqualToString:@"bookingsSearchSegue"]) {
-        AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
         SearchTypeViewController * searchTypeViewController = [segue destinationViewController];
-        searchTypeViewController.appointmentData = appData;
-        searchTypeViewController.urlStr = self.urlStr;
+        searchTypeViewController.appointment = self.appointment;
         searchTypeViewController.searchTypeDelegate = self;
+        searchTypeViewController.hub = self.hub;
+        searchTypeViewController.authResponse = self.authResponse;
+        searchTypeViewController.connection = self.connection;
     }
     else if ([[segue identifier] isEqualToString:@"bookingSegue"]) {
         /**
@@ -344,15 +347,15 @@
 
 #pragma mark - premises delegate
 
-- (void)slotsFreeViewControllerDidFinish:(PremisesViewController *)controller slot:(AppointmentData *)appData;
+- (void)slotsFreeViewControllerDidFinish:(PremisesViewController *)controller slot:(Appointment *)appData;
 {
-    if (self.bookingsDataController != nil)
+    if (_patientBookings != nil)
     {
-        [self.bookingsDataController addBooking:appData.slot onDate:appData.appointmentDate forSession:appData.session withStaff:appData.staff];
+        [_patientBookings addObject:appData];
         
         [self setSearching:NO hasBookings:YES isError:NO];
     }
-    self.appointmentData.premise = appData.premise;
+    self.appointment.Location = appData.Location;
 }
 
 -(void) bookingsReturnHome:(UIViewController *)controller
@@ -367,7 +370,6 @@
     if (_patientBookings != nil)
     {
         Appointment *appointmentToDelete  = [_patientBookings objectAtIndex:self.rowIndex.section];
-        
         
         if ([_patientBookings count] > 0)
         {
@@ -416,7 +418,7 @@
 -(void)didGetBookingsRequest:(NSData *)jsonEventData 
 {
     self.addButton.enabled = NO;
-    [self.premisesDataController getPremises:self.appointmentData];
+    [self.premisesDataController getPremises:self.appointment];
 
     NSError* error;
     NSArray* eventData = [NSJSONSerialization JSONObjectWithData:jsonEventData options:kNilOptions error:&error];

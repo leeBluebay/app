@@ -17,9 +17,7 @@
 
 @synthesize searchTypeDelegate = _searchTypeDelegate;
 @synthesize activityIndicator = _activityIndicator;
-@synthesize appointmentData = _appointmentData;
 @synthesize searchTypeDataController = _searchTypeDataController;
-@synthesize urlStr = _urlStr;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -80,25 +78,32 @@
 #pragma mark - DatesFree / StaffFree / SessionFree delegate
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
 
     if ([[segue identifier] isEqualToString:@"datesFreeSegue"]) {
         DatesFreeViewController * datesFreeViewController = [segue destinationViewController];
         datesFreeViewController.datesFreeDelegate = self;
-        datesFreeViewController.urlStr = self.urlStr;
-        datesFreeViewController.appointmentData = appData;
+        datesFreeViewController.appointment = self.appointment;
+        
+        datesFreeViewController.connection = self.connection;
+        datesFreeViewController.hub = self.hub;
+        datesFreeViewController.authResponse = self.authResponse;
     }
     else if ([[segue identifier] isEqualToString:@"staffFreeSegue"]) {
         StaffFreeViewController * staffFreeViewController = [segue destinationViewController];
         staffFreeViewController.staffFreeDelegate = self;
-        staffFreeViewController.urlStr = self.urlStr;
-        staffFreeViewController.appointmentData = appData;
+        staffFreeViewController.appointment = self.appointment;
+        
+        staffFreeViewController.connection = self.connection;
+        staffFreeViewController.hub = self.hub;
+        staffFreeViewController.authResponse = self.authResponse;
     }
     else if ([[segue identifier] isEqualToString:@"sessionFreeSegue"]) {
         SessionFreeViewController * sessionFreeViewController = [segue destinationViewController];
         sessionFreeViewController.sessionFreeDelegate = self;
-        sessionFreeViewController.urlStr = self.urlStr;
-        sessionFreeViewController.appointmentData = appData;
+        sessionFreeViewController.appointment = self.appointment;
+        sessionFreeViewController.connection = self.connection;
+        sessionFreeViewController.hub = self.hub;
+        sessionFreeViewController.authResponse = self.authResponse;
     }
 }
 

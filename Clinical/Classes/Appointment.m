@@ -8,6 +8,7 @@
 
 #import "Appointment.h"
 
+
 @implementation Appointment
 
 + (Appointment*) convertFromNsDictionary:(NSDictionary *) appointmentDictionary
@@ -49,6 +50,25 @@
     for (NSDictionary *appointmentDictionary in json)
     {
         Appointment *appointment = [Appointment convertFromNsDictionary:appointmentDictionary];
+        [appointments addObject:appointment];
+    }
+    
+    return appointments;
+}
+
++ (NSMutableArray*) convertFromAppResponse:(AppResponse *) appResponse
+{
+    NSData *nsData = [appResponse.JData dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSDictionary *json = [NSJSONSerialization JSONObjectWithData:nsData options:0 error:nil];
+    
+    NSDictionary *appointmentsJson = [json valueForKey:@"Items"];
+    
+    NSMutableArray *appointments = [[NSMutableArray alloc] init];
+    
+    for (NSDictionary *appointmentJson in appointmentsJson)
+    {
+        Appointment *appointment = [Appointment convertFromNsDictionary:appointmentJson];
         [appointments addObject:appointment];
     }
     

@@ -30,11 +30,12 @@
     [self.sessionFreeArray addObject:strSession];
 }
 
-- (void)getAppointmentSessions:(AppointmentData*)appointmentData
+/**
+- (void)getAppointmentSessions:(Appointment*)appointment
 {
     NSDictionary* requestData = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 appointmentData.practiceCode, @"PracticeCode",
-                                 appointmentData.premise, @"Premise",
+                                 appointment.PracticeCode, @"PracticeCode",
+                                 appointment.Location, @"Premise",
                                  nil];
     
     NSData *jsonData = nil;
@@ -103,5 +104,6 @@
         [[self sessionFreeDataDelegate] sessionFreeDataControllerHadError];
     }
 }
+**/
 
 @end

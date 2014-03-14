@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AppointmentData.h"
+#import "Appointment.h"
 #import "ClinicalConstants.h"
 
 @class SessionFreeDataController;
@@ -24,6 +24,7 @@
 @property (strong, nonatomic) NSMutableArray * sessionFreeArray;
 @property (weak, nonatomic) id <SessionFreeDataControllerDelegate> sessionFreeDataDelegate;
 
-- (void)getAppointmentSessions:(AppointmentData*)appointmentData;
+
+- (void)addSession:(NSString *)strSession;
 
 @end

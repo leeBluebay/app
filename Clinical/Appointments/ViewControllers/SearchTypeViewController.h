@@ -21,14 +21,17 @@
 
 @interface SearchTypeViewController : UITableViewController <UIActionSheetDelegate, DatesFreeViewControllerDelegate, StaffFreeViewControllerDelegate, SessionFreeViewControllerDelegate>
 
-@property (strong, nonatomic) NSString* urlStr;
-
 @property (strong, nonatomic) SearchTypeDataController *searchTypeDataController;
 
-@property (strong, nonatomic) AppointmentData* appointmentData;
+@property (strong, nonatomic) Appointment* appointment;
 
 @property (weak, nonatomic) id <SearchTypeViewControllerDelegate> searchTypeDelegate;
 
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+
+@property (strong, nonatomic) AuthResponse *authResponse;
+@property (strong, nonatomic) SRHubConnection *connection;
+@property (strong, nonatomic) SRHubProxy *hub;
 
 @end

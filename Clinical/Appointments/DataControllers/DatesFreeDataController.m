@@ -12,7 +12,6 @@
 
 @synthesize datesFreeArray = _datesFreeArray;
 @synthesize datesFreeDataDelegate = _datesFreeDataDelegate;
-@synthesize urlStr = _urlStr;
 
 - (id)init {
     if (self = [super init]) {
@@ -30,13 +29,14 @@
     [self.datesFreeArray addObject:strDate];
 }
 
-- (void)getAppointmentDates:(AppointmentData*)appointmentData
+/**
+- (void)getAppointmentDates:(Appointment*)appointment
 {
     NSDictionary* requestData = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 appointmentData.practiceCode, @"PracticeCode",
-                                 appointmentData.staff, @"StaffID",
-                                 appointmentData.session, @"Session",
-                                 appointmentData.premise, @"Premise",
+                                 appointment.PracticeCode, @"PracticeCode",
+                                 appointment.StaffId, @"StaffID",
+                                 appointment.Session, @"Session",
+                                 appointment.Location, @"Premise",
                                  nil];
     
     NSData *jsonData = nil;
@@ -106,5 +106,5 @@
         [[self datesFreeDataDelegate] datesFreeDataControllerHadError];
     }
 }
-
+**/
 @end

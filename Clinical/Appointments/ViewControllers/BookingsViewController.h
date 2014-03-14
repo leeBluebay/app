@@ -30,7 +30,7 @@
 
 @property (strong, nonatomic) BookingsDataController * bookingsDataController;
 
-@property (strong, nonatomic) AppointmentData* appointmentData;
+@property (strong, nonatomic) Appointment* appointment;
 
 @property (nonatomic) NSInteger *bookings;
 

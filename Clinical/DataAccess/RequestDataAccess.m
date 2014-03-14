@@ -27,14 +27,14 @@ NSMutableData* receivedData;
     return self;
 }
 
--(NSString*)getAppointmentEventData:(AppointmentData*)appointmentData
+-(NSString*)getAppointmentEventData:(Appointment*)appointment
 {
     NSDictionary* dicEventData = [NSDictionary dictionaryWithObjectsAndKeys:
-                                  appointmentData.session, @"ses",
-                                  appointmentData.staff, @"stf",
-                                  appointmentData.appointmentDate, @"ad",
-                                  appointmentData.slot, @"slt",
-                                  appointmentData.premise, @"prm",
+                                  appointment.Session, @"ses",
+                                  appointment.StaffId, @"stf",
+                                  appointment.EventDate, @"ad",
+                                  appointment.EventTime, @"slt",
+                                  appointment.Location, @"prm",
                                   nil];
     
     NSData *jsonEventData = [NSJSONSerialization dataWithJSONObject:dicEventData options:0 error:nil];

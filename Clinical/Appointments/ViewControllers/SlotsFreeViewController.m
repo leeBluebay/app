@@ -13,22 +13,16 @@
 
 @interface SlotsFreeViewController ()
 @property (nonatomic, copy) NSString* slotBooked;
-@property (nonatomic, strong) RequestDataAccess* requestDataAccess;
-@property (nonatomic, strong) RequestData *requestData;
 @property (nonatomic) NSInteger requestCount;
 @property (nonatomic) BOOL isError;
 @end
 
 @implementation SlotsFreeViewController
 
-@synthesize urlStr = _urlStr;
 @synthesize slotsFreeDataController;
 @synthesize activityIndicator;
 @synthesize slotsFreeDelegate;
 @synthesize slotBooked;
-@synthesize appointmentData = _appointmentData;
-@synthesize requestDataAccess;
-@synthesize requestData = _requestData;
 @synthesize requestCount = _requestCount;
 @synthesize isError = _isError;
 
@@ -47,12 +41,13 @@
     
     self.isError = NO;
     
-    RequestDataAccess* reqDataAccess = [[RequestDataAccess alloc] init];
-    self.requestDataAccess = reqDataAccess;
-    self.requestDataAccess.requestDataDelegate = self;
-    self.requestDataAccess.urlStr = self.urlStr;
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
     
-    self.requestData = [[RequestData alloc] initWithPractice:self.appointmentData.practiceCode forPatient:self.appointmentData.patientID withRequest:@"1"];
+    self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
+    
+    NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@' , Data : %@}", self.authResponse.Ticket, [self.appointment toJsonString]];
+    
+    [_hub invoke:@"getClinicalAppointments" withArgs:@[appRequest]];
 
     SlotsFreeDataController * aDataController = [[SlotsFreeDataController alloc] init];
     self.slotsFreeDataController = aDataController;
@@ -61,8 +56,6 @@
     [self showToolbar];
     [self setSearching:YES hasBookings:NO isError:NO];
     [self.activityIndicator setHidesWhenStopped:YES];
-    
-    [self setSlotsRequest];
 }
 
 - (void)viewDidUnload
@@ -162,24 +155,25 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     SlotFreeData * slotFreeData = [self.slotsFreeDataController.slotsFreeArray objectAtIndex:(NSUInteger)indexPath.section];
-    self.appointmentData.slot = [slotFreeData.slotsArray objectAtIndex:indexPath.row];
-    self.appointmentData.session = slotFreeData.session;
+    self.appointment.EventTime = [slotFreeData.slotsArray objectAtIndex:indexPath.row];
+    self.appointment.Session = slotFreeData.session;
     
-    self.slotBooked = [[NSString alloc] initWithFormat:@"%@ %@", self.appointmentData.appointmentDate, self.appointmentData.slot];
+    self.slotBooked = [[NSString alloc] initWithFormat:@"%@ %@", self.appointment.EventDate, self.appointment.EventTime];
     
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setTimeStyle:NSDateFormatterNoStyle];
     [dateFormatter setDateFormat:@"dd/MM/yyyy"];
-    NSDate *slotDate = [dateFormatter dateFromString:self.appointmentData.appointmentDate];
+    NSDate *slotDate = [dateFormatter dateFromString:self.appointment.EventDate];
     [dateFormatter setDateFormat:@"EEE dd MMM yyyy"];
     NSString *strDate = [dateFormatter stringFromDate:slotDate];
 
     NSString *strConfirm;
-    if ([self.appointmentData.premise isEqualToString:@"Unspecified"]){
-        strConfirm = [[NSString alloc] initWithFormat:@"Please confirm %@ booking with %@ on %@ at %@", self.appointmentData.session, self.appointmentData.staff, strDate, self.appointmentData.slot];
+    if ([self.appointment.Location isEqualToString:@"Unspecified"]){
+        strConfirm = [[NSString alloc] initWithFormat:@"Please confirm %@ booking with %@ on %@ at %@", self.appointment.Session , self.appointment.StaffId, strDate,
+                      self.appointment.EventTime];
     }
     else {
-        strConfirm = [[NSString alloc] initWithFormat:@"Please confirm %@ booking at %@ with %@ on %@ at %@", self.appointmentData.session, self.appointmentData.premise, self.appointmentData.staff, strDate, self.appointmentData.slot];
+        strConfirm = [[NSString alloc] initWithFormat:@"Please confirm %@ booking at %@ with %@ on %@ at %@", self.appointment.Session, self.appointment.Location, self.appointment.StaffId, strDate, self.appointment.EventTime];
     }
 
     UIActionSheet* sheet = [[UIActionSheet alloc] initWithTitle:strConfirm delegate:self cancelButtonTitle:@"Cancel" 
@@ -193,9 +187,11 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([[segue identifier] isEqualToString:@"confirmBookingSegue"]) {
         ConfirmBookingViewController *confirmBookingViewController = [segue destinationViewController];
-        confirmBookingViewController.appointmentData = self.appointmentData;
+        confirmBookingViewController.appointment = self.appointment;
         confirmBookingViewController.confirmBookingDelegate = self;
-        confirmBookingViewController.urlStr = self.urlStr;
+        confirmBookingViewController.authResponse = self.authResponse;
+        confirmBookingViewController.connection = self.connection;
+        confirmBookingViewController.hub = self.hub;
     }
 }
 
@@ -212,7 +208,7 @@
 
 - (void)confirmBookingViewControllerDidFinish:(ConfirmBookingViewController *)controller;
 {
-    [[self slotsFreeDelegate] slotsFreeViewControllerDidFinish:self slot:self.appointmentData];
+    [[self slotsFreeDelegate] slotsFreeViewControllerDidFinish:self slot:self.appointment];
     [[self navigationController] popToRootViewControllerAnimated:YES];
 }
 
@@ -220,46 +216,42 @@
     [self.slotsFreeDelegate bookingsReturnHome:self];
 }
 
-#pragma mark - request data
+#pragma mark - signalR responses
 
--(void) setSlotsRequest {
-    self.requestData.eventData = [self.requestDataAccess getAppointmentEventData:self.appointmentData];
-    [self.requestDataAccess setRequest:self.requestData];
-}
-
-- (void)getRequest {
-    [self.requestDataAccess getRequest:self.requestData];
-}    
-
-#pragma mark - request data delegate
-
--(void)didSetRequest {
-    self.requestCount = 1;
-    [self performSelector:@selector(getRequest) withObject:nil afterDelay:1];    
-}
-
--(void)setRequestError:(NSString *)strError {
-    [self performSelector:@selector(getRequestError:) withObject:strError afterDelay:1.0];    
-}
-
--(void)didGetRequest:(NSData *)responseData {
-    NSError* error;
-    NSDictionary* requestData = [NSJSONSerialization JSONObjectWithData:responseData options:kNilOptions error:&error];
+- (void) getResponse:(NSString *) jsonData
+{
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
     
-    NSString* strEventData = [requestData objectForKey:@"EventData"];
-    
-    if ([strEventData isEqualToString:@"false"]) {
-        if (self.requestCount < 20) {
-            self.requestCount++;
-            [self performSelector:@selector(getRequest) withObject:nil afterDelay:1];    
-        }
-        else {
-            [self getRequestError:@"The request has timed out"];
-        }
+    if([appResponse.CallbackMethod  isEqual: @"GetClinicalAppointments"])
+    {
+        [self processResponse:appResponse];
     }
-    else {
-        NSData* jsonEventData = [strEventData dataUsingEncoding:NSUTF8StringEncoding];
-        [self didGetSlotRequest:jsonEventData];
+}
+
+-(void)processResponse:(AppResponse*)appResponse
+{
+    if (appResponse.IsError) {
+        [self getRequestError:appResponse.Error];
+    }
+    else
+    {
+        NSMutableArray * appointments = [Appointment convertFromJsonList:appResponse.JData];
+        
+        if([appointments count] == 0)
+        {
+            [self.slotsFreeDataController addSlot:@"No slots available" toSession:@""];
+            [self setSearching:NO hasBookings:NO isError:NO];
+        }
+        else
+        {
+            for (Appointment* app in appointments)
+            {
+                [self.slotsFreeDataController addSlot:app.EventTime toSession:app.Session];
+            }
+            [self setSearching:NO hasBookings:YES isError:NO];
+        }
+        
+        [self.tableView reloadData];
     }
 }
 
@@ -268,32 +260,9 @@
     [self.slotsFreeDataController addSlot:strError toSession:@"Request failed"];
     
     [self setSearching:NO hasBookings:NO isError:YES];
-    [self.requestDataAccess delRequest:self.requestData];
     [self.tableView reloadData];
 }
 
--(void)didGetSlotRequest:(NSData *)jsonEventData {
-    NSError* error;
-    NSArray* eventData = [NSJSONSerialization JSONObjectWithData:jsonEventData options:kNilOptions error:&error];
-    
-    [self.slotsFreeDataController clearSlots];
-    if ([eventData count] == 0) {
-        self.isError = YES;
-        [self.slotsFreeDataController addSlot:@"No slots available" toSession:@""];
-        [self setSearching:NO hasBookings:NO isError:NO];
-    }
-    else {
-        for (NSDictionary* timeSlot in eventData) {
-            NSString* session = [timeSlot objectForKey:@"ses"];
-            NSString* slot = [timeSlot objectForKey:@"slt"];
-            [self.slotsFreeDataController addSlot:slot toSession:session];
-        }
-        [self setSearching:NO hasBookings:YES isError:NO];
-    }
-    
-    [self.requestDataAccess delRequest:self.requestData];
-    [self.tableView reloadData];
-}
 
 #pragma mark - show toolbar
 

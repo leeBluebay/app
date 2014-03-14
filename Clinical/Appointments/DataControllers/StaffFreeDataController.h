@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AppointmentData.h"
+#import "Appointment.h"
 #import "ClinicalConstants.h"
 
 @class StaffFreeDataController;
@@ -23,7 +23,6 @@
 
 @property (strong, nonatomic) NSMutableArray * staffFreeArray;
 @property (weak, nonatomic) id <StaffFreeDataControllerDelegate> staffFreeDataDelegate;
-
-- (void)getAppointmentStaff:(AppointmentData*)appointmentData;
+- (void)addStaff:(NSString *)strStaff ;
 
 @end

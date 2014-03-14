@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AppointmentData.h"
+#import "Appointment.h"
 #import "ClinicalConstants.h"
 
 @class DatesFreeDataController;
@@ -19,11 +19,10 @@
 
 @interface DatesFreeDataController : NSObject
 
-@property (nonatomic, strong) NSString* urlStr;
 
 @property (strong, nonatomic) NSMutableArray * datesFreeArray;
 @property (weak, nonatomic) id <DatesFreeDataControllerDelegate> datesFreeDataDelegate;
 
-- (void)getAppointmentDates:(AppointmentData*)appointmentData;
+- (void)addDate:(NSString *)strDate ;
 
 @end

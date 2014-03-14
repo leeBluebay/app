@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 #import "ObjectHelper.h"
+#import "AppResponse.h"
+
 @interface Appointment : NSObject
 
 @property (nonatomic, copy) NSString* PracticePatientId;
@@ -20,6 +22,7 @@
 
 + (Appointment*) convertFromNsDictionary:(NSDictionary *) appointmentDictionary;
 + (NSMutableArray*) convertFromJsonList:(NSString *) jsonData;
++ (NSMutableArray*) convertFromAppResponse:(AppResponse *) appResponse;
 
 - (NSString*) toJsonString;
 

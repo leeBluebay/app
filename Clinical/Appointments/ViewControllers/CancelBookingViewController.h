@@ -12,6 +12,7 @@
 #import "SignalR.h"
 #import "AppResponse.h"
 #import "AuthResponse.h"
+#import "ClinicalConstants.h"
 
 @class CancelBookingViewController;
 
@@ -25,14 +26,14 @@
 @property (weak, nonatomic) id <CancelBookingViewControllerDelegate> cancelBookingDelegate;
 
 
-@property (strong, nonatomic) Appointment* appointment;
+
 
 @property (strong, nonatomic) IBOutlet UILabel *cancelLabel;
 @property (strong, nonatomic) IBOutlet UILabel *errorLabel;
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *doneButton;
 
-
+@property (strong, nonatomic) Appointment* appointment;
 @property (strong, nonatomic) AppResponse *appResponse;
 @property (strong, nonatomic) AuthResponse *authResponse;
 @property (strong, nonatomic) SRHubConnection *connection;

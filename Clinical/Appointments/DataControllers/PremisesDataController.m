@@ -41,11 +41,11 @@
 - (void)addPremise:(NSString *)strPremise {
     [self.premisesArray addObject:strPremise];
 }
-
-- (void)getPremises:(AppointmentData *)appointmentData
+/**
+- (void)getPremises:(Appointment *)appointment
 {
     NSDictionary* requestData = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 appointmentData.practiceCode, @"PracticeCode",
+                                 appointment.PracticeCode, @"PracticeCode",
                                  nil];
     
     NSData *jsonData = nil;
@@ -100,5 +100,5 @@
         [[self premisesDataDelegate] premisesDataControllerHadError:[error localizedDescription]];
     }
 }
-
+**/
 @end

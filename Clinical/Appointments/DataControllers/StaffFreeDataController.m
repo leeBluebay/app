@@ -30,13 +30,14 @@
     [self.staffFreeArray addObject:strStaff];
 }
 
-- (void)getAppointmentStaff:(AppointmentData*)appointmentData
+/**
+- (void)getAppointmentStaff:(Appointment*)appointment
 {
     NSDictionary* requestData = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 appointmentData.practiceCode, @"PracticeCode",
-                                 appointmentData.appointmentDate, @"EventDate",
-                                 appointmentData.session, @"Session",
-                                 appointmentData.premise, @"Premise",
+                                 appointment.PracticeCode, @"PracticeCode",
+                                 appointment.EventDate, @"EventDate",
+                                 appointment.Session, @"Session",
+                                 appointment.Location, @"Premise",
                                  nil];
     
     NSData *jsonData = nil;
@@ -105,5 +106,5 @@
         [[self staffFreeDataDelegate] staffFreeDataControllerHadError];
     }
 }
-
+**/
 @end

@@ -18,7 +18,6 @@
 @synthesize urlStr = _urlStr;
 @synthesize premisesDataController = _premisesDataController;
 @synthesize premisesDelegate = _premisesDelegate;
-@synthesize appointmentData = _appointmentData;
 @synthesize activityIndicator = _activityIndicator;
 
 - (id)initWithStyle:(UITableViewStyle)style
@@ -36,6 +35,15 @@
     
     [self.activityIndicator setHidesWhenStopped:YES];
     [self showToolbar];
+    
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
+    
+    self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
+    
+    NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@' , Data : %@}", self.authResponse.Ticket, [self.appointment toJsonString]];
+    
+    
+    [_hub invoke:@"getAppointmentPremises" withArgs:@[appRequest]];
 }
 
 - (void)viewDidUnload
@@ -70,7 +78,7 @@
     UILabel *premiseLabel = (UILabel *)[cell viewWithTag:100];
     premiseLabel.text = strPremise;
 
-    if ([strPremise isEqualToString:self.appointmentData.premise]){
+    if ([strPremise isEqualToString:self.appointment.Location]){
         UIImageView *premiseImageView = (UIImageView *)[cell viewWithTag:200];
         UIImage *premiseImage = [UIImage imageNamed:@"greentick.png"];
         premiseImageView.image = premiseImage;
@@ -85,13 +93,17 @@
     if ([[segue identifier] isEqualToString:@"searchTypeSegue"]) {
         NSIndexPath* indexPath = [[self tableView] indexPathForSelectedRow];
         NSString * strPremise = [self.premisesDataController.premisesArray objectAtIndex:(NSUInteger)indexPath.row];
-        self.appointmentData.premise = strPremise;
-        AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
+        self.appointment.Location = strPremise;
         
         SearchTypeViewController * searchTypeViewController = [segue destinationViewController];
         searchTypeViewController.searchTypeDelegate = self;
-        searchTypeViewController.urlStr = self.urlStr;
-        searchTypeViewController.appointmentData = appData;
+        
+        self.appointment.Location = strPremise;
+        
+        searchTypeViewController.appointment = self.appointment;
+        searchTypeViewController.connection = self.connection;
+        searchTypeViewController.hub = self.hub;
+        searchTypeViewController.authResponse = self.authResponse;
     }
 }
 
@@ -124,6 +136,45 @@
 - (void)returnHome
 {
     [self.premisesDelegate bookingsReturnHome:self];
+}
+
+#pragma mark - signalR responses
+
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if([appResponse.CallbackMethod  isEqual: @"GetAppointmentPremises"])
+    {
+        [self processResponse:appResponse];
+    }
+}
+
+-(void)processResponse:(AppResponse*)appResponse
+{
+    if (appResponse.IsError) {
+        [self.premisesDataController.premisesDataDelegate premisesDataControllerHadError:appResponse.Error];
+    }
+    else
+    {
+        NSMutableArray * appointments = [Appointment convertFromAppResponse:appResponse];
+        
+        if([appointments count] == 0)
+        {
+            [[self.premisesDataController premisesDataDelegate] premisesDataControllerIsEmpty];
+        }
+        else
+        {
+            for (Appointment* app in appointments)
+            {
+                [self.premisesDataController addPremise:app.Location];
+            }
+        }
+        
+        [[self.premisesDataController premisesDataDelegate] premisesDataControllerDidFinish];
+        [self.tableView reloadData];
+    }
 }
 
 @end

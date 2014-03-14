@@ -18,7 +18,6 @@
 @synthesize sessionFreeDataController = _sessionFreeDataController;
 @synthesize sessionFreeDelegate = _sessionFreeDelegate;
 @synthesize activityIndicator = _activityIndicator;
-@synthesize appointmentData = _appointmentData;
 @synthesize urlStr = _urlStr;
 
 @synthesize isError = _isError;
@@ -44,9 +43,17 @@
     self.sessionFreeDataController = aDataController;
     self.sessionFreeDataController.sessionFreeDataDelegate = self;
     self.sessionFreeDataController.urlStr = self.urlStr;
-    [self.sessionFreeDataController getAppointmentSessions:self.appointmentData];
     
     [self showToolbar];
+    
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
+    
+    self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
+    
+    NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@' , Data : %@}", self.authResponse.Ticket, [self.appointment toJsonString]];
+    
+    
+    [_hub invoke:@"getAppointmentSessions" withArgs:@[appRequest]];
 }
 
 - (void)viewDidUnload
@@ -100,13 +107,14 @@
     if ([[segue identifier] isEqualToString:@"sessionDatesSegue"]) {
         NSIndexPath* indexPath = [[self tableView] indexPathForSelectedRow];
         NSString * strSession = [self.sessionFreeDataController.sessionFreeArray objectAtIndex:(NSUInteger)indexPath.row];
-        self.appointmentData.session = strSession;
+        self.appointment.Session = strSession;
 
         DatesFreeViewController * datesFreeViewController = [segue destinationViewController];
         datesFreeViewController.datesFreeDelegate = self;
-        datesFreeViewController.urlStr = self.urlStr;
-        AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
-        datesFreeViewController.appointmentData = appData;
+        datesFreeViewController.appointment = self.appointment;
+        datesFreeViewController.hub = self.hub;
+        datesFreeViewController.connection = self.connection;
+        datesFreeViewController.authResponse = self.authResponse;
     }
 }
 
@@ -162,6 +170,45 @@
 - (void)returnHome
 {
     [self.sessionFreeDelegate bookingsReturnHome:self];
+}
+
+#pragma mark - signalR responses
+
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if([appResponse.CallbackMethod  isEqual: @"GetAppointmentSessions"])
+    {
+        [self processResponse:appResponse];
+    }
+}
+
+-(void)processResponse:(AppResponse*)appResponse
+{
+    if (appResponse.IsError) {
+        [self.sessionFreeDataController addSession:appResponse.Error];
+        [self.sessionFreeDataController.sessionFreeDataDelegate sessionFreeDataControllerHadError];
+    }
+    else
+    {
+        NSMutableArray * appointments = [Appointment convertFromAppResponse:appResponse];
+        
+        if([appointments count] == 0)
+        {
+            [self.sessionFreeDataController addSession:@"No sessions found"];
+        }
+        else
+        {
+            for (Appointment* app in appointments)
+            {
+                [self.sessionFreeDataController addSession:app.Session];
+            }
+        }
+        
+        [self.sessionFreeDataController.sessionFreeDataDelegate sessionFreeDataControllerDidFinish];
+    }
 }
 
 @end

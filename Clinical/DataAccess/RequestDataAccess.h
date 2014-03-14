@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "AppointmentData.h"
+#import "Appointment.h"
 #import "RequestData.h"
 #import "ClinicalConstants.h"
 
@@ -30,7 +30,7 @@
 - (void)getRequest:(RequestData*)requestData;
 - (void)delRequest:(RequestData*)requestData;
 
--(NSString*)getAppointmentEventData:(AppointmentData*)appointmentData;
+-(NSString*)getAppointmentEventData:(Appointment*)appointmentData;
 
 @end
 

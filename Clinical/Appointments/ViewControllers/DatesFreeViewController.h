@@ -12,6 +12,11 @@
 #import "DatesFreeDataController.h"
 #import "ClinicalConstants.h"
 
+#import "Appointment.h"
+#import "SignalR.h"
+#import "AppResponse.h"
+#import "AuthResponse.h"
+
 @class DatesFreeViewController;
 
 @protocol DatesFreeViewControllerDelegate <NSObject>
@@ -21,14 +26,18 @@
 
 @interface DatesFreeViewController : UITableViewController <StaffFreeViewControllerDelegate, SlotsFreeViewControllerDelegate, DatesFreeDataControllerDelegate>
 
-@property (strong, nonatomic) NSString* urlStr;
-
-@property (strong, nonatomic) AppointmentData* appointmentData;
+@property (strong, nonatomic) Appointment* appointment;
 
 @property (strong, nonatomic) DatesFreeDataController * datesFreeDataController;
 
 @property (weak, nonatomic) id <DatesFreeViewControllerDelegate> datesFreeDelegate;
 
 @property (strong, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+
+@property (strong, nonatomic) AppResponse *appResponse;
+@property (strong, nonatomic) AuthResponse *authResponse;
+@property (strong, nonatomic) SRHubConnection *connection;
+@property (strong, nonatomic) SRHubProxy *hub;
 
 @end

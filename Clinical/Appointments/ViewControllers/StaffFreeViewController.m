@@ -17,8 +17,6 @@
 
 @implementation StaffFreeViewController
 
-@synthesize urlStr = _urlStr;
-@synthesize appointmentData;
 @synthesize staffFreeDataController;
 @synthesize staffFreeDelegate;
 @synthesize activityIndicator;
@@ -46,8 +44,15 @@
     StaffFreeDataController * aDataController = [[StaffFreeDataController alloc] init];
     self.staffFreeDataController = aDataController;
     self.staffFreeDataController.staffFreeDataDelegate = self;
-    self.staffFreeDataController.urlStr = self.urlStr;
-    [self.staffFreeDataController getAppointmentStaff:self.appointmentData];
+    
+    [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
+    
+    self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
+    
+    NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@' , Data : %@}", self.authResponse.Ticket, [self.appointment toJsonString]];
+    
+    
+    [_hub invoke:@"getAppointmentStaff" withArgs:@[appRequest]];
     
     [self showToolbar];
 }
@@ -97,20 +102,23 @@
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     NSIndexPath* indexPath = [[self tableView] indexPathForSelectedRow];
     NSString * strStaff = [self.staffFreeDataController.staffFreeArray objectAtIndex:(NSUInteger)indexPath.row];
-    self.appointmentData.staff = strStaff;
-    AppointmentData* appData = [[AppointmentData alloc] initWithData:self.appointmentData];
+    self.appointment.StaffId = strStaff;
     
     if ([[segue identifier] isEqualToString:@"clinicianSlotsSegue"]) {
         SlotsFreeViewController * slotsFreeViewController = [segue destinationViewController];
         slotsFreeViewController.slotsFreeDelegate = self;
-        slotsFreeViewController.urlStr = self.urlStr;
-        slotsFreeViewController.appointmentData = appData;
+        slotsFreeViewController.appointment = self.appointment;
+        slotsFreeViewController.connection = self.connection;
+        slotsFreeViewController.hub = self.hub;
+        slotsFreeViewController.authResponse = self.authResponse;
     }
     else if ([[segue identifier] isEqualToString:@"clinicianDatesSegue"]) {
         DatesFreeViewController * datesFreeViewController = [segue destinationViewController];
         datesFreeViewController.datesFreeDelegate = self;
-        datesFreeViewController.urlStr = self.urlStr;
-        datesFreeViewController.appointmentData = appData;
+        datesFreeViewController.appointment = self.appointment;
+        datesFreeViewController.connection = self.connection;
+        datesFreeViewController.hub = self.hub;
+        datesFreeViewController.authResponse = self.authResponse;
     }
 }
 
@@ -167,6 +175,48 @@
 - (void)returnHome
 {
     [self.staffFreeDelegate bookingsReturnHome:self];
+}
+
+
+#pragma mark - signalR responses
+
+- (void) getResponse:(NSString *) jsonData
+{
+    
+    AppResponse *appResponse = [AppResponse convertFromJson:jsonData];
+    
+    if([appResponse.CallbackMethod  isEqual: @"GetAppointmentStaff"])
+    {
+        [self processResponse:appResponse];
+    }
+}
+
+-(void)processResponse:(AppResponse*)appResponse
+{
+    if (appResponse.IsError) {
+        [self.staffFreeDataController addStaff:appResponse.Error];
+        [self.staffFreeDataController.staffFreeDataDelegate staffFreeDataControllerHadError];
+    }
+    else
+    {
+        NSMutableArray * appointments = [Appointment convertFromAppResponse:appResponse];
+        
+        if([appointments count] == 0)
+        {
+            [self.staffFreeDataController addStaff:@"No clinicians found"];
+        }
+        else
+        {
+            for (Appointment* app in appointments)
+            {
+                [self.staffFreeDataController addStaff:app.StaffId];
+            }
+        }
+        
+        [self.tableView reloadData];
+        
+        [self.staffFreeDataController.staffFreeDataDelegate staffFreeDataControllerDidFinish];
+    }
 }
 
 @end

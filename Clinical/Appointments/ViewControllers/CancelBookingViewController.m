@@ -53,7 +53,6 @@
     [_hub on:@"getResponse" perform:self selector:@selector(getResponse:)];
     
     self.appointment.PracticePatientId = self.authResponse.Patient.PracticePatientId;
-    self.appointment.Location = @"";
     
     NSString *appRequest = [NSString stringWithFormat:@"{Ticket: '%@' , Data : %@}", self.authResponse.Ticket, [self.appointment toJsonString]];
     
@@ -154,11 +153,11 @@
     
     if([appResponse.CallbackMethod  isEqual: @"CancelClinicalAppointment"])
     {
-        [self processCancelresponse:appResponse];
+        [self processCancelResponse:appResponse];
     }
 }
 
--(void) processCancelresponse:(AppResponse *) appResponse
+-(void) processCancelResponse:(AppResponse *) appResponse
 {
     
     if(appResponse.IsError)
@@ -171,10 +170,7 @@
         self.errorLabel.hidden = YES;
         [self.activityIndicator stopAnimating];
         self.navigationItem.rightBarButtonItem = self.doneButton;
-        
-        
     }
-
 }
 
 @end
